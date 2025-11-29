@@ -1,0 +1,8 @@
+slot_id,day,period,start_time,end_time,course_id
+0,Sunday,1,08:00,10:00,EE101
+1,Sunday,2,10:00,12:00,EE101
+2,Monday,3,12:00,14:00,CS102
+3,Tuesday,1,08:00,10:00,CS101
+4,Tuesday,2,10:00,12:00,CS201
+5,Wednesday,1,08:00,10:00,IT201
+6,Thursday,2,10:00,12:00,ME101

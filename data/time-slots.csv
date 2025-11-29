@@ -1,0 +1,8 @@
+slot_id,day,period,start_time,end_time
+0,Sunday,1,08:00,10:00
+1,Sunday,2,10:00,12:00
+2,Monday,3,12:00,14:00
+3,Tuesday,1,08:00,10:00
+4,Tuesday,2,10:00,12:00
+5,Wednesday,1,08:00,10:00
+6,Thursday,2,10:00,12:00

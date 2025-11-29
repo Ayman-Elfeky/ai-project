@@ -1,0 +1,8 @@
+course_id,name,hours_per_week,lecturer_id
+CS101,Introduction to Programming,4,L001
+CS102,Data Structures,4,L002
+IT201,Networks,3,L003
+EE101,Circuits,3,L004
+ME101,Engineering Mechanics,3,L005
+CS201,Databases,3,L002
+
