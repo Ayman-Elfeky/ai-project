@@ -1,0 +1,21 @@
+name,department,weekly_hours,type
+Data Structures,Computer Science,3,lecture
+Database Management,Computer Science,2,lecture
+Database Lab,Computer Science,2,lab
+Algorithms,Computer Science,4,lecture
+Operating Systems,Computer Science,3,lecture
+Computer Networks,Computer Science,2,lecture
+Networks Lab,Computer Science,2,lab
+Software Engineering,Computer Science,3,lecture
+Artificial Intelligence,Computer Science,3,lecture
+Machine Learning,Computer Science,2,lecture
+ML Lab,Computer Science,2,lab
+Web Development,Computer Science,2,lecture
+Mobile Programming,Computer Science,2,lecture
+Computer Graphics,Computer Science,2,lecture
+Graphics Lab,Computer Science,2,lab
+Calculus I,Mathematics,4,lecture
+Linear Algebra,Mathematics,3,lecture
+Discrete Mathematics,Mathematics,3,lecture
+Statistics,Mathematics,2,lecture
+Physics I,Physics,3,lecture
