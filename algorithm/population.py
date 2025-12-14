@@ -1,4 +1,5 @@
 import random
+from models.timetable import Timetable
 
 class PopulationManager:
     """Manages population of timetables."""
@@ -13,7 +14,6 @@ class PopulationManager:
         
     def initialize(self):
         """Create initial random population."""
-        from models.timetable import Timetable
         self.population = []
         for _ in range(self.size):
             timetable = Timetable(self.courses, self.lecturers, 
@@ -24,7 +24,7 @@ class PopulationManager:
     
     def select_accepted(self, acceptance_rate):
         """Select top individuals for acceptance."""
-        sorted_pop = sorted(self.population, key=lambda x: x.fitness)
+        sorted_pop = sorted(self.population, key=lambda x: x.fitness, reverse=True)
         n_accepted = max(1, int(len(sorted_pop) * acceptance_rate))
         return sorted_pop[:n_accepted]
     

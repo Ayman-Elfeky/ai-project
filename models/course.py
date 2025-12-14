@@ -1,6 +1,4 @@
 class Course:
-    """Represents a course in the timetable."""
-    
     def __init__(self, name, department, weekly_hours, course_type='lecture', group=None):
         self.name = name
         self.department = department

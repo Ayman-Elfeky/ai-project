@@ -1,6 +1,4 @@
 class Room:
-    """Represents a room in the facility."""
-    
     def __init__(self, name, capacity, room_type='lecture', availability=None):
         self.name = name
         self.capacity = capacity

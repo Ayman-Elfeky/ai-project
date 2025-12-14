@@ -1,6 +1,4 @@
 class TimeSlot:
-    """Represents a time slot in the timetable."""
-    
     def __init__(self, day, hour):
         self.day = day
         self.hour = hour

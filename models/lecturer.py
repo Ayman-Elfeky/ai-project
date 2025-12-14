@@ -1,6 +1,4 @@
 class Lecturer:
-    """Represents a lecturer in the system."""
-    
     def __init__(self, name, email, qualified_courses=None, availability=None):
         self.name = name
         self.email = email

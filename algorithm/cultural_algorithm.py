@@ -47,9 +47,9 @@ class CulturalAlgorithm:
             self.belief_space.update_situational(population)
             self.belief_space.update_topographical(population)
             
-            best_fit = min(ind.fitness for ind in population)
+            best_fit = max(ind.fitness for ind in population)
             avg_fit = sum(ind.fitness for ind in population) / len(population)
-            best_ind = min(population, key=lambda x: x.fitness)
+            best_ind = max(population, key=lambda x: x.fitness)
             _, hard_v, soft_v = self.fitness_evaluator.evaluate(best_ind)
             
             self.history['best_fitness'].append(best_fit)
@@ -62,7 +62,7 @@ class CulturalAlgorithm:
             
             new_population = []
             
-            elites = sorted(population, key=lambda x: x.fitness)[:2]
+            elites = sorted(population, key=lambda x: x.fitness, reverse=True)[:2]
             new_population.extend([e.copy() for e in elites])
             
             while len(new_population) < self.population_size:

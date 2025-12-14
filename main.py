@@ -1,10 +1,3 @@
-"""
-Cultural Algorithm Timetable Scheduler - Streamlit GUI
-Professional implementation with full feature set
-
-To run: streamlit run main.py
-"""
-
 import streamlit as st
 import pandas as pd
 import json
@@ -28,9 +21,7 @@ from utils.file_handler import FileHandler
 from utils.visualizer import Visualizer
 from config.settings import Settings
 
-# ============================================================================
 # PAGE CONFIGURATION
-# ============================================================================
 st.set_page_config(
     page_title="Cultural Algorithm Scheduler",
     page_icon="📅",
@@ -38,9 +29,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ============================================================================
 # SESSION STATE INITIALIZATION
-# ============================================================================
 if 'courses' not in st.session_state:
     st.session_state.courses = []
 if 'lecturers' not in st.session_state:
@@ -62,9 +51,7 @@ if "rooms_uploaded" not in st.session_state:
 if "time_slots_uploaded" not in st.session_state:
     st.session_state.time_slots_uploaded = False
 
-# ============================================================================
 # CUSTOM CSS
-# ============================================================================
 st.markdown("""
 <style>
     .main-header {
@@ -110,17 +97,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================================================
 # HEADER
-# ============================================================================
-st.markdown('<div class="main-header">🎓 Faculty Timetable Scheduler</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">Faculty Timetable Scheduler</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">Using Cultural Algorithm with Belief Space Optimization</div>', unsafe_allow_html=True)
 
-# ============================================================================
 # SIDEBAR - ALGORITHM PARAMETERS
-# ============================================================================
 with st.sidebar:
-    st.header("⚙️ Algorithm Configuration")
+    st.header("Algorithm Configuration")
     
     with st.expander("Algorithm Parameters", expanded=True):
         pop_size = st.number_input(
@@ -160,7 +143,7 @@ with st.sidebar:
     st.divider()
     
     # Summary
-    st.subheader("📊 Data Summary")
+    st.subheader("Data Summary")
     st.metric("Courses", len(st.session_state.courses))
     st.metric("Lecturers", len(st.session_state.lecturers))
     st.metric("Rooms", len(st.session_state.rooms))
@@ -169,30 +152,26 @@ with st.sidebar:
     st.divider()
     
     # Quick Actions
-    st.subheader("🔄 Quick Actions")
-    if st.button("🗑️ Clear All Data", use_container_width=True):
+    st.subheader("Quick Actions")
+    if st.button("Clear All Data", use_container_width=True):
         st.session_state.courses = []
-        st.session_state.lecturers = []
+        st.session_state.lecturers = [] 
         st.session_state.rooms = []
         st.session_state.time_slots = []
         st.session_state.results = None
         st.session_state.history = None
         st.rerun()
 
-# ============================================================================
 # MAIN CONTENT TABS
-# ============================================================================
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📚 Courses", 
-    "👨‍🏫 Lecturers", 
-    "🏛️ Rooms", 
-    "🕐 Time Slots", 
-    "📊 Results"
+    "Courses", 
+    "Lecturers", 
+    "Rooms", 
+    "Time Slots", 
+    "Results"
 ])
 
-# ============================================================================
 # TAB 1: COURSES
-# ============================================================================
 with tab1:
     st.header("Course Management")
     
@@ -208,7 +187,7 @@ with tab1:
             course_type = st.selectbox("Type", ["lecture", "lab"])
             course_group = st.text_input("Group", placeholder="Optional, defaults to department")
             
-            submitted = st.form_submit_button("➕ Add Course", use_container_width=True)
+            submitted = st.form_submit_button("Add Course", use_container_width=True)
             
             if submitted:
                 if course_name and course_dept:
@@ -220,10 +199,10 @@ with tab1:
                         group=course_group if course_group else course_dept
                     )
                     st.session_state.courses.append(new_course)
-                    st.success(f"✅ Added course: {course_name}")
+                    st.success(f"Added course: {course_name}")
                     st.rerun()
                 else:
-                    st.error("❌ Please fill all required fields")
+                    st.error("Please fill all required fields")
         
         st.divider()
         
@@ -231,17 +210,17 @@ with tab1:
         st.subheader("Import from File")
         uploaded_file = st.file_uploader("Upload CSV", type=['csv'], key="courses_file")
         
-        if uploaded_file:
+        if uploaded_file and not st.session_state.courses_uploaded:
             try:
                 imported_courses = FileHandler.import_courses_csv(uploaded_file)
-                print("===========================",imported_courses)
+                # print("===========================",imported_courses)
                 # st.session_state.courses.extend(imported_courses)
                 st.session_state.courses = imported_courses
                 st.session_state.courses_uploaded = True
-                st.success(f"✅ Imported {len(imported_courses)} courses")
+                st.success(f"Imported {len(imported_courses)} courses")
                 # st.rerun()
             except Exception as e:
-                st.error(f"❌ Error importing file: {str(e)}")
+                st.error(f"Error importing file: {str(e)}")
         
         with st.expander("CSV Format Example"):
             st.code("""name,department,weekly_hours,type
@@ -254,7 +233,7 @@ Algorithms,CS,4,lecture""")
         
         if st.session_state.courses:
             # Display as table
-            print(st.session_state.courses)
+            # print(st.session_state.courses)
             courses_data = [c.to_dict() for c in st.session_state.courses]
             df = pd.DataFrame(courses_data)
             
@@ -268,13 +247,17 @@ Algorithms,CS,4,lecture""")
                 format_func=lambda x: st.session_state.courses[x].name
             )
             
-            if st.button("🗑️ Remove Selected Course", type="secondary"):
+            if st.button("Remove Selected Course", type="secondary"):
+                print("Are You Crazy Before:",len(st.session_state.courses))
                 deleted = st.session_state.courses.pop(course_to_delete)
-                st.success(f"✅ Removed: {deleted.name}")
+                print("============ HHEEHEEHEE:", deleted)
+                st.success(f"Removed: {deleted.name}")
+                print("Are You Crazy After:",len(st.session_state.courses))
+                # st.session_state.courses = None
                 st.rerun()
             
             # Export
-            if st.button("📥 Export Courses to CSV"):
+            if st.button("Export Courses to CSV"):
                 csv = df.to_csv(index=False)
                 st.download_button(
                     "Download CSV",
@@ -283,11 +266,9 @@ Algorithms,CS,4,lecture""")
                     "text/csv"
                 )
         else:
-            st.info("ℹ️ No courses added yet. Add courses manually or import from CSV.")
+            st.info("No courses added yet. Add courses manually or import from CSV.")
 
-# ============================================================================
 # TAB 2: LECTURERS
-# ============================================================================
 with tab2:
     st.header("Lecturer Management")
     
@@ -300,7 +281,7 @@ with tab2:
             lect_name = st.text_input("Lecturer Name *", placeholder="Dr. John Smith")
             lect_email = st.text_input("Email *", placeholder="john.smith@university.edu")
             
-            submitted = st.form_submit_button("➕ Add Lecturer", use_container_width=True)
+            submitted = st.form_submit_button("Add Lecturer", use_container_width=True)
             
             if submitted:
                 if lect_name and lect_email:
@@ -309,10 +290,10 @@ with tab2:
                         email=lect_email
                     )
                     st.session_state.lecturers.append(new_lecturer)
-                    st.success(f"✅ Added lecturer: {lect_name}")
+                    st.success(f"Added lecturer: {lect_name}")
                     st.rerun()
                 else:
-                    st.error("❌ Please fill all required fields")
+                    st.error("Please fill all required fields")
         
         st.divider()
         
@@ -320,16 +301,16 @@ with tab2:
         st.subheader("Import from File")
         uploaded_file = st.file_uploader("Upload CSV", type=['csv'], key="lecturers_file")
         
-        if uploaded_file:
+        if uploaded_file and not st.session_state.lecturers_uploaded:
             try:
                 imported_lecturers = FileHandler.import_lecturers_csv(uploaded_file)
                 # st.session_state.lecturers.extend(imported_lecturers)
                 st.session_state.lecturers = imported_lecturers
                 st.session_state.lecturers_uploaded = True
-                st.success(f"✅ Imported {len(imported_lecturers)} lecturers")
+                st.success(f"Imported {len(imported_lecturers)} lecturers")
                 # st.rerun()
             except Exception as e:
-                st.error(f"❌ Error importing file: {str(e)}")
+                st.error(f"Error importing file: {str(e)}")
         
         with st.expander("CSV Format Example"):
             st.code("""name,email
@@ -354,12 +335,12 @@ Prof. Bob Wilson,bob@university.edu""")
                 format_func=lambda x: st.session_state.lecturers[x].name
             )
             
-            if st.button("🗑️ Remove Selected Lecturer", type="secondary"):
+            if st.button("Remove Selected Lecturer", type="secondary"):
                 deleted = st.session_state.lecturers.pop(lecturer_to_delete)
-                st.success(f"✅ Removed: {deleted.name}")
+                st.success(f"Removed: {deleted.name}")
                 st.rerun()
         else:
-            st.info("ℹ️ No lecturers added yet. Add lecturers manually or import from CSV.")
+            st.info("No lecturers added yet. Add lecturers manually or import from CSV.")
 
 # ============================================================================
 # TAB 3: ROOMS
@@ -377,7 +358,7 @@ with tab3:
             room_capacity = st.number_input("Capacity *", min_value=1, max_value=500, value=30)
             room_type = st.selectbox("Type", ["lecture", "lab"])
             
-            submitted = st.form_submit_button("➕ Add Room", use_container_width=True)
+            submitted = st.form_submit_button("Add Room", use_container_width=True)
             
             if submitted:
                 if room_name:
@@ -387,10 +368,10 @@ with tab3:
                         room_type=room_type
                     )
                     st.session_state.rooms.append(new_room)
-                    st.success(f"✅ Added room: {room_name}")
+                    st.success(f"Added room: {room_name}")
                     st.rerun()
                 else:
-                    st.error("❌ Please fill all required fields")
+                    st.error("Please fill all required fields")
         
         st.divider()
         
@@ -398,16 +379,16 @@ with tab3:
         st.subheader("Import from File")
         uploaded_file = st.file_uploader("Upload CSV", type=['csv'], key="rooms_file")
         
-        if uploaded_file:
+        if uploaded_file and not st.session_state.rooms_uploaded:
             try:
                 imported_rooms = FileHandler.import_rooms_csv(uploaded_file)
                 # st.session_state.rooms.extend(imported_rooms)
                 st.session_state.rooms = imported_rooms
                 st.session_state.rooms_uploaded = True
-                st.success(f"✅ Imported {len(imported_rooms)} rooms")
+                st.success(f"Imported {len(imported_rooms)} rooms")
                 # st.rerun()
             except Exception as e:
-                st.error(f"❌ Error importing file: {str(e)}")
+                st.error(f"Error importing file: {str(e)}")
         
         with st.expander("CSV Format Example"):
             st.code("""name,capacity,type
@@ -432,16 +413,15 @@ B203,100,lecture""")
                 format_func=lambda x: st.session_state.rooms[x].name
             )
             
-            if st.button("🗑️ Remove Selected Room", type="secondary"):
+            if st.button("Remove Selected Room", type="secondary"):
                 deleted = st.session_state.rooms.pop(room_to_delete)
-                st.success(f"✅ Removed: {deleted.name}")
+                st.success(f"Removed: {deleted.name}")
                 st.rerun()
         else:
-            st.info("ℹ️ No rooms added yet. Add rooms manually or import from CSV.")
+            st.info("No rooms added yet. Add rooms manually or import from CSV.")
 
-# ============================================================================
-# TAB 4: TIME SLOTS
-# ============================================================================
+
+# TAB 4: TIME SLOTS 
 with tab4:
     st.header("Time Slot Configuration")
     
@@ -459,9 +439,9 @@ with tab4:
         start_hour = st.number_input("Start Hour", min_value=6, max_value=20, value=8)
         end_hour = st.number_input("End Hour", min_value=7, max_value=22, value=18)
         
-        if st.button("🕐 Generate Time Slots", use_container_width=True, type="primary"):
+        if st.button("Generate Time Slots", use_container_width=True, type="primary"):
             if start_hour >= end_hour:
-                st.error("❌ End hour must be greater than start hour")
+                st.error("End hour must be greater than start hour")
             else:
                 st.session_state.time_slots = []
                 for day in days_selected:
@@ -469,7 +449,7 @@ with tab4:
                         time_slot = TimeSlot(day, f"{hour}:00")
                         st.session_state.time_slots.append(time_slot)
                 
-                st.success(f"✅ Generated {len(st.session_state.time_slots)} time slots")
+                st.success(f"Generated {len(st.session_state.time_slots)} time slots")
                 st.rerun()
     
     with col2:
@@ -489,15 +469,13 @@ with tab4:
                     hours = sorted(slots_by_day[day])
                     st.write(f"**{day}:** {', '.join(hours)}")
             
-            if st.button("🗑️ Clear Time Slots", type="secondary"):
+            if st.button("Clear Time Slots", type="secondary"):
                 st.session_state.time_slots = []
                 st.rerun()
         else:
-            st.info("ℹ️ No time slots generated yet. Use the form to create time slots.")
+            st.info("No time slots generated yet. Use the form to create time slots.")
 
-# ============================================================================
 # TAB 5: RESULTS & EXECUTION
-# ============================================================================
 with tab5:
     st.header("Algorithm Execution & Results")
     
@@ -510,17 +488,17 @@ with tab5:
     )
     
     if not valid:
-        st.warning(f"⚠️ {message}")
+        st.warning(f"{message}")
         st.info("Please complete the data input in the previous tabs before running the algorithm.")
     else:
-        st.success("✅ All inputs validated. Ready to run!")
+        st.success("All inputs validated. Ready to run!")
         
         # Run button
         col1, col2, col3 = st.columns([2, 1, 2])
         
         with col2:
             run_button = st.button(
-                "▶️ Run Algorithm",
+                "Run Algorithm",
                 use_container_width=True,
                 type="primary"
             )
@@ -538,7 +516,7 @@ with tab5:
                 
                 with metrics_placeholder.container():
                     col1, col2, col3 = st.columns(3)
-                    col1.metric("Best Fitness", f"{fitness:.2f}")
+                    col1.metric("Best Fitness", f"{fitness:.5f}")
                     col2.metric("Hard Violations", hard_v)
                     col3.metric("Soft Violations", soft_v)
             
@@ -560,135 +538,20 @@ with tab5:
                 st.session_state.results = best_timetable
                 st.session_state.history = history
                 print("========RESULTS=========")
-                print(st.session_state.results.to_dict_list())
+                # print(st.session_state.results.to_dict_list())
                 progress_bar.progress(1.0)
-                st.success("✅ Algorithm completed successfully!")
+                st.success("Algorithm completed successfully!")
     
     # Display results
     if st.session_state.results:
-        # st.divider()
-        # st.header("Results")
-        
-        # # Metrics
-        # col1, col2, col3, col4 = st.columns(4)
-        
-        # final_fitness = st.session_state.history['best_fitness'][-1]
-        # final_hard = st.session_state.history['hard_violations'][-1]
-        # final_soft = st.session_state.history['soft_violations'][-1]
-        
-        # col1.metric("Final Fitness", f"{final_fitness:.2f}")
-        # col2.metric("Hard Violations", final_hard)
-        # col3.metric("Soft Violations", final_soft)
-        # col4.metric("Total Entries", len(st.session_state.results.entries))
-        
-        # # Timetable
-        # st.subheader("📅 Generated Timetable")
-        
-        # timetable_data = st.session_state.results.to_dict_list()
-        # df_timetable = pd.DataFrame(timetable_data)
-        
-        # st.dataframe(df_timetable, use_container_width=True, height=400)
-        
-        # # Export buttons
-        # col1, col2 = st.columns(2)
-        
-        # with col1:
-        #     csv = df_timetable.to_csv(index=False)
-        #     st.download_button(
-        #         "📥 Download as CSV",
-        #         csv,
-        #         "timetable.csv",
-        #         "text/csv",
-        #         use_container_width=True
-        #     )
-        
-        # with col2:
-        #     json_data = json.dumps(timetable_data, indent=2)
-        #     st.download_button(
-        #         "📥 Download as JSON",
-        #         json_data,
-        #         "timetable.json",
-        #         "application/json",
-        #         use_container_width=True
-        #     )
-        
-        # Chatgpt
-        # st.divider()
-        # st.subheader("📅 Faculty Timetable View")
-        
-        # timetable_data = st.session_state.results.to_dict_list()
-        # df_timetable = pd.DataFrame(timetable_data)
-
-        # # Days of the week
-        # days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-        
-        # # Create a timetable dictionary
-        # timetable_dict = {day: [""]*5 for day in days}  # 5 rows per day
-        
-        # # Fill timetable
-        # for day in days:
-        #     day_entries = df_timetable[df_timetable['day'] == day]
-        #     # Sort by hour
-        #     day_entries = day_entries.sort_values(by='hour')
-        #     for i, (_, row) in enumerate(day_entries.iterrows()):
-        #         if i >= 5:  # max 5 rows per day
-        #             break
-        #         timetable_dict[day][i] = f"{row['hour']} | {row['course']} | {row['room']} | {row['lecturer']}"
-        
-        # # Display timetable
-        # st.table(pd.DataFrame(timetable_dict))
-
-        
-        # # Visualizations
-        # st.divider()
-        # st.subheader("📊 Convergence Analysis")
-        
-        # # Fitness convergence
-        # fig_fitness = Visualizer.plot_fitness_convergence(st.session_state.history)
-        # st.plotly_chart(fig_fitness, use_container_width=True)
-        
-        # # Constraint violations
-        # fig_violations = Visualizer.plot_constraint_violations(st.session_state.history)
-        # st.plotly_chart(fig_violations, use_container_width=True)
-        
-        # chatgpt 3
-        # st.divider()
-        # st.subheader("📅 Faculty Timetable Grid View")
-
-        # timetable_data = st.session_state.results.to_dict_list()
-        # df_timetable = pd.DataFrame(timetable_data)
-
-        # # Days of the week
-        # days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-
-        # # Get unique time slots and sort them
-        # time_slots = sorted(df_timetable['hour'].unique(), key=lambda x: int(x.split(':')[0]))
-
-        # # Create empty timetable DataFrame
-        # grid_df = pd.DataFrame("", index=time_slots, columns=days)
-
-        # # Fill the timetable
-        # for _, row in df_timetable.iterrows():
-        #     hour = row['hour']
-        #     day = row['day']
-        #     entry = f"{row['course']} | {row['room']} | {row['lecturer']}"
-        #     if grid_df.at[hour, day] != "":
-        #         grid_df.at[hour, day] += "\n" + entry  # multiple entries in same slot
-        #     else:
-        #         grid_df.at[hour, day] = entry
-
-        # # Display
-        # st.dataframe(grid_df, use_container_width=True, height=500)
-        
-        # chatgpt 4
         st.divider()
-        st.subheader("📅 Faculty Timetable Grid (Days as Rows)")
+        st.subheader("Faculty Timetable Grid (Days as Rows)")
 
         timetable_data = st.session_state.results.to_dict_list()
         df_timetable = pd.DataFrame(timetable_data)
-
+        # print(st.session_state.time_slots) 
         # Days of the week
-        days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+        days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"]
 
         # Get unique time slots and sort them
         time_slots = sorted(df_timetable['hour'].unique(), key=lambda x: int(x.split(':')[0]))
@@ -702,27 +565,24 @@ with tab5:
             hour = row['hour']
             entry = f"{row['course']} | {row['room']} | {row['lecturer']}"
             if grid_df.at[day, hour] != "":
-                grid_df.at[day, hour] += "\n" + entry  # multiple entries in same slot
+                grid_df.at[day, hour] += "\n" + entry 
             else:
                 grid_df.at[day, hour] = entry
 
         # Display
         st.dataframe(grid_df, use_container_width=True, height=400)
-        # ------------------------
-        # Download CSV
-        # ------------------------
+        
+        
+        
+        # ------------- Download CSV ----------------
         csv_data = grid_df.to_csv(index=True)
-        st.download_button("📥 Download CSV", csv_data, "timetable.csv", "text/csv")
+        st.download_button("Download CSV", csv_data, "timetable.csv", "text/csv")
 
-        # ------------------------
-        # Download JSON
-        # ------------------------
+        # ------------- Download JSON ----------------
         json_data = grid_df.to_dict(orient='index')
-        st.download_button("📥 Download JSON", json.dumps(json_data, indent=2), "timetable.json", "application/json")
+        st.download_button("Download JSON", json.dumps(json_data, indent=2), "timetable.json", "application/json")
 
-        # ------------------------
-        # Download PDF
-        # ------------------------
+        # ------------- Download PDF ----------------
         def create_pdf(df):
             pdf = FPDF(orientation="L", unit="mm", format="A4")
             pdf.add_page()
@@ -750,11 +610,9 @@ with tab5:
             return pdf_bytes
 
         pdf_bytes = create_pdf(grid_df)
-        st.download_button("📥 Download PDF", pdf_bytes, "timetable.pdf", "application/pdf")
+        st.download_button("Download PDF", pdf_bytes, "timetable.pdf", "application/pdf")
 
-        # ------------------------
-        # Download PNG
-        # ------------------------
+        # ------------- Download PNG ----------------
         def create_png(df):
             fig, ax = plt.subplots(figsize=(len(df.columns)*1.5, len(df.index)*0.8))
             ax.axis('tight')
@@ -772,18 +630,53 @@ with tab5:
             return png_output
 
         png_file = create_png(grid_df)
-        st.download_button("📥 Download PNG", png_file, "timetable.png", "image/png")
+        st.download_button("Download PNG", png_file, "timetable.png", "image/png")
+        
+        
+    if st.session_state.history:
+                
+        st.divider()
+        st.subheader("Algorithm Performance Visualization")
+
+        history = st.session_state.history
+        generations_range = range(1, len(history['best_fitness']) + 1)
+
+        # ------------------ FITNESS PLOT ------------------
+        st.markdown("### Fitness Convergence")
+
+        fig1, ax1 = plt.subplots(figsize=(8, 4))
+        ax1.plot(generations_range, history['best_fitness'], label="Best Fitness")
+        ax1.plot(generations_range, history['avg_fitness'], label="Average Fitness")
+        ax1.set_xlabel("Generation")
+        ax1.set_ylabel("Fitness Value")
+        ax1.set_title("Fitness Convergence Over Generations")
+        ax1.legend()
+        ax1.grid(True)
+
+        st.pyplot(fig1)
+
+        # ------------------ VIOLATIONS PLOT ------------------
+        st.markdown("### Constraint Violations")
+
+        fig2, ax2 = plt.subplots(figsize=(8, 4))
+        ax2.plot(generations_range, history['hard_violations'], label="Hard Violations")
+        ax2.plot(generations_range, history['soft_violations'], label="Soft Violations")
+        ax2.set_xlabel("Generation")
+        ax2.set_ylabel("Number of Violations")
+        ax2.set_title("Constraint Violations Over Generations")
+        ax2.legend()
+        ax2.grid(True)
+
+        st.pyplot(fig2)
 
 
 
-# ============================================================================
+
 # FOOTER
-# ============================================================================
 st.divider()
-st.markdown("""
-<div style='text-align: center; color: #666; padding: 2rem;'>
-    <p><strong>Cultural Algorithm Timetable Scheduler</strong></p>
-    <p>Professional implementation with Object-Oriented Design</p>
-    <p>© 2025 | Built with Streamlit & Python</p>
-</div>
-""", unsafe_allow_html=True)
+# st.markdown("""
+# <div style='text-align: center; color: #666; padding: 2rem;'>
+#     <p>Built By:</p>
+#     <p>- Ayman Abdulaziz <br> - Ahmed Magdy <br> - Eyad Gamal <br> - Shahed Waleed <br> - Mahitab mohammed <br> - Mostafa Farghly</p>
+# </div>
+# """, unsafe_allow_html=True)

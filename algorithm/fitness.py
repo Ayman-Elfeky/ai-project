@@ -1,25 +1,24 @@
 from collections import defaultdict
 
 class FitnessEvaluator:
-    """Evaluates timetable fitness based on constraints."""
-    
     def __init__(self, hard_weight=1000, soft_weight=1):
         self.hard_weight = hard_weight
         self.soft_weight = soft_weight
         
     def evaluate(self, timetable):
-        """Calculate total fitness score."""
         hard_violations = self._count_hard_violations(timetable)
         soft_violations = self._count_soft_violations(timetable)
         
-        fitness = (hard_violations * self.hard_weight + 
+        penalty = (hard_violations * self.hard_weight + 
                    soft_violations * self.soft_weight)
+            
+        fitness = 1 / (1 + penalty)
+        
         
         timetable.fitness = fitness
         return fitness, hard_violations, soft_violations
     
     def _count_hard_violations(self, timetable):
-        """Count hard constraint violations."""
         violations = 0
         
         lecturer_schedule = defaultdict(list)

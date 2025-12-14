@@ -1,6 +1,4 @@
 class Settings:
-    """Configuration settings for the Cultural Algorithm Scheduler."""
-    
     # Algorithm Parameters
     DEFAULT_POPULATION_SIZE = 50
     DEFAULT_GENERATIONS = 100
@@ -12,7 +10,7 @@ class Settings:
     SOFT_CONSTRAINT_WEIGHT = 1
     
     # Time Constraints
-    DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
     START_HOUR = 8
     END_HOUR = 18
     
@@ -20,5 +18,5 @@ class Settings:
     DEFAULT_K_FOLDS = 5
     
     # File Upload
-    ALLOWED_FILE_TYPES = ['csv', 'xlsx', 'json']
+    ALLOWED_FILE_TYPES = ['csv', 'xlsx', 'json', 'pdf']
     MAX_FILE_SIZE_MB = 10

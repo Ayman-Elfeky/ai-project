@@ -2,8 +2,6 @@ import random
 from typing import List
 
 class TimetableEntry:
-    """Single entry in the timetable."""
-    
     def __init__(self, course, lecturer, room, time_slot):
         self.course = course
         self.lecturer = lecturer
@@ -23,18 +21,15 @@ class TimetableEntry:
         }
 
 class Timetable:
-    """Complete timetable solution."""
-    
     def __init__(self, courses, lecturers, rooms, time_slots):
         self.courses = courses
         self.lecturers = lecturers
         self.rooms = rooms
         self.time_slots = time_slots
         self.entries = []
-        self.fitness = float('inf')
+        self.fitness = float('-inf')
         
     def initialize_random(self):
-        """Generate random timetable."""
         self.entries = []
         for course in self.courses:
             for _ in range(course.weekly_hours):
@@ -47,7 +42,6 @@ class Timetable:
                 self.entries.append(entry)
                 
     def copy(self):
-        """Create deep copy of timetable."""
         new_tt = Timetable(self.courses, self.lecturers, self.rooms, self.time_slots)
         new_tt.entries = [TimetableEntry(e.course, e.lecturer, e.room, e.time_slot) 
                           for e in self.entries]

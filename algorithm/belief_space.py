@@ -16,7 +16,7 @@ class BeliefSpace:
         
         self.situational = {
             'best_timetable': None,
-            'best_fitness': float('inf')
+            'best_fitness': float('-inf')
         }
         
         self.topographical = {
@@ -47,7 +47,7 @@ class BeliefSpace:
     def update_situational(self, population):
         """Update best individual found."""
         for individual in population:
-            if individual.fitness < self.situational['best_fitness']:
+            if individual.fitness > self.situational['best_fitness']:
                 self.situational['best_fitness'] = individual.fitness
                 self.situational['best_timetable'] = individual.copy()
                 
@@ -56,13 +56,13 @@ class BeliefSpace:
         fitness_values = [ind.fitness for ind in population]
         median_fitness = np.median(fitness_values)
         
-        good = [ind for ind in population if ind.fitness < median_fitness]
-        bad = [ind for ind in population if ind.fitness >= median_fitness]
+        good = [ind for ind in population if ind.fitness > median_fitness]
+        bad = [ind for ind in population if ind.fitness <= median_fitness]
         
         if good:
-            self.topographical['good_regions'] = good[:5]
+            self.topographical['good_regions'] = sorted(good, key=lambda x: x.fitness, reverse=True)[:5]
         if bad:
-            self.topographical['bad_regions'] = bad[-5:]
+            self.topographical['bad_regions'] = sorted(bad, key=lambda x: x.fitness)[:5]
     
     def get_best_timetable(self):
         return self.situational['best_timetable']
