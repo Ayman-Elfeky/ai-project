@@ -32,13 +32,22 @@ class FitnessEvaluator:
             room_schedule[time_key].append(entry.room)
             group_schedule[time_key].append(entry.course.group)
             
+            # Room type compatibility
             if entry.course.course_type != entry.room.room_type:
                 violations += 1
             
+            # Lecturer availability
             if not entry.lecturer.is_available(entry.time_slot.day, entry.time_slot.hour):
                 violations += 1
             
+            # Room availability 
             if not entry.room.is_available(entry.time_slot.day, entry.time_slot.hour):
+                violations += 1
+                
+            # Lecturer qualification check
+            if (hasattr(entry.lecturer, 'qualified_courses') and 
+                entry.lecturer.qualified_courses and 
+                entry.course.name not in entry.lecturer.qualified_courses):
                 violations += 1
         
         for lecturers in lecturer_schedule.values():

@@ -537,11 +537,135 @@ with tab5:
                 
                 st.session_state.results = best_timetable
                 st.session_state.history = history
-                print("========RESULTS=========")
-                # print(st.session_state.results.to_dict_list())
+                # Results processed successfully
                 progress_bar.progress(1.0)
                 st.success("Algorithm completed successfully!")
     
+    # Performance Analysis
+    if st.session_state.history:
+        st.divider()
+        st.subheader("Algorithm Performance Analysis")
+        
+        # Create tabs for different analysis views
+        perf_tab1, perf_tab2, perf_tab3 = st.tabs([
+            "Evolution Curves",
+            "Parameter Analysis", 
+            "Belief Space Insights"
+        ])
+        
+        with perf_tab1:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Fitness evolution plot
+                fig, ax = plt.subplots(figsize=(10, 6))
+                generations_range = list(range(1, len(st.session_state.history['best_fitness']) + 1))
+                ax.plot(generations_range, st.session_state.history['best_fitness'], 
+                       label='Best Fitness', color='green', linewidth=2)
+                ax.plot(generations_range, st.session_state.history['avg_fitness'], 
+                       label='Average Fitness', color='blue', alpha=0.7)
+                ax.set_xlabel('Generation')
+                ax.set_ylabel('Fitness')
+                ax.set_title('Fitness Evolution Over Generations')
+                ax.legend()
+                ax.grid(True, alpha=0.3)
+                st.pyplot(fig)
+                plt.close(fig)
+            
+            with col2:
+                # Violations plot
+                fig, ax = plt.subplots(figsize=(10, 6))
+                ax.plot(generations_range, st.session_state.history['hard_violations'], 
+                       label='Hard Violations', color='red', linewidth=2)
+                ax.plot(generations_range, st.session_state.history['soft_violations'], 
+                       label='Soft Violations', color='orange', alpha=0.7)
+                ax.set_xlabel('Generation')
+                ax.set_ylabel('Number of Violations')
+                ax.set_title('Constraint Violations Over Generations')
+                ax.legend()
+                ax.grid(True, alpha=0.3)
+                st.pyplot(fig)
+                plt.close(fig)
+        
+        with perf_tab2:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Diversity plot
+                if 'diversity' in st.session_state.history:
+                    fig, ax = plt.subplots(figsize=(10, 6))
+                    ax.plot(generations_range, st.session_state.history['diversity'], 
+                           color='purple', linewidth=2)
+                    ax.set_xlabel('Generation')
+                    ax.set_ylabel('Population Diversity')
+                    ax.set_title('Population Diversity Over Generations')
+                    ax.grid(True, alpha=0.3)
+                    st.pyplot(fig)
+                    plt.close(fig)
+            
+            with col2:
+                # Parameter impact summary
+                st.subheader("Algorithm Parameters Used")
+                st.write(f"**Population Size:** {pop_size}")
+                st.write(f"**Max Generations:** {generations}")
+                st.write(f"**Acceptance Rate:** {acceptance_rate}")
+                st.write(f"**Mutation Rate:** {mutation_rate}")
+                
+                # Final statistics
+                final_fitness = st.session_state.history['best_fitness'][-1]
+                final_hard = st.session_state.history['hard_violations'][-1]
+                final_soft = st.session_state.history['soft_violations'][-1]
+                
+                st.subheader("Final Results")
+                st.metric("Best Fitness Achieved", f"{final_fitness:.5f}")
+                st.metric("Hard Violations", final_hard)
+                st.metric("Soft Violations", final_soft)
+                
+        with perf_tab3:
+            # Belief Space Analysis
+            if 'belief_space_updates' in st.session_state.history:
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    fig, ax = plt.subplots(figsize=(10, 6))
+                    ax.plot(generations_range, st.session_state.history['belief_space_updates'], 
+                           color='brown', linewidth=2)
+                    ax.set_xlabel('Generation')
+                    ax.set_ylabel('Belief Space Size')
+                    ax.set_title('Belief Space Knowledge Accumulation')
+                    ax.grid(True, alpha=0.3)
+                    st.pyplot(fig)
+                    plt.close(fig)
+                
+                with col2:
+                    st.subheader("Cultural Algorithm Analysis")
+                    improvement = (st.session_state.history['best_fitness'][-1] - 
+                                 st.session_state.history['best_fitness'][0])
+                    st.metric("Total Fitness Improvement", f"{improvement:.5f}")
+                    
+                    convergence_gen = None
+                    for i in range(1, len(st.session_state.history['best_fitness'])):
+                        if (st.session_state.history['best_fitness'][i] == 
+                            st.session_state.history['best_fitness'][i-1]):
+                            convergence_gen = i
+                            break
+                    
+                    if convergence_gen:
+                        st.metric("Convergence Generation", convergence_gen)
+                    else:
+                        st.metric("Convergence", "Still improving")
+                        
+                    # Cultural Algorithm specific metrics
+                    avg_diversity = sum(st.session_state.history['diversity']) / len(st.session_state.history['diversity'])
+                    st.metric("Average Population Diversity", f"{avg_diversity:.4f}")
+                    
+                    # Improvement rate
+                    if len(st.session_state.history['best_fitness']) > 10:
+                        early_avg = sum(st.session_state.history['best_fitness'][:10]) / 10
+                        late_avg = sum(st.session_state.history['best_fitness'][-10:]) / 10
+                        improvement_rate = late_avg - early_avg
+                        st.metric("Late-Stage Improvement Rate", f"{improvement_rate:.5f}")
+
     # Display results
     if st.session_state.results:
         st.divider()
@@ -569,10 +693,17 @@ with tab5:
             else:
                 grid_df.at[day, hour] = entry
 
-        # Display
+        # Display the timetable
         st.dataframe(grid_df, use_container_width=True, height=400)
         
-        
+        # Debug info
+        with st.expander("Debug Information"):
+            st.write(f"Total timetable entries: {len(df_timetable)}")
+            st.write(f"Unique days: {df_timetable['day'].unique()}")
+            st.write(f"Unique hours: {sorted(df_timetable['hour'].unique())}")
+            st.write(f"Grid shape: {grid_df.shape}")
+            st.write("Sample entries:")
+            st.write(df_timetable.head())
         
         # ------------- Download CSV ----------------
         csv_data = grid_df.to_csv(index=True)
@@ -584,54 +715,129 @@ with tab5:
 
         # ------------- Download PDF ----------------
         def create_pdf(df):
-            pdf = FPDF(orientation="L", unit="mm", format="A4")
+            from fpdf import FPDF
+            
+            # Use A3 landscape for better space
+            pdf = FPDF(orientation="L", unit="mm", format="A3")
             pdf.add_page()
-            pdf.set_font("Arial", "B", 12)
             
-            col_width = pdf.w / (len(df.columns) + 1)
-            row_height = 10
+            # Title
+            pdf.set_font("Arial", "B", 16)
+            pdf.cell(0, 15, "Faculty Timetable Schedule", ln=True, align="C")
+            pdf.ln(5)
             
-            # Header row
-            pdf.cell(col_width, row_height, "Day/Time", border=1, ln=0, align="C")
+            # Calculate dimensions
+            page_width = pdf.w - 20  # Leave margins
+            col_width = page_width / (len(df.columns) + 1)
+            row_height = 20  # Increased height for better readability
+            
+            # Header styling
+            pdf.set_font("Arial", "B", 10)
+            pdf.set_fill_color(200, 220, 255)  # Light blue background
+            
+            # Header row - Day/Time column
+            pdf.cell(col_width, row_height, "Day/Time", border=1, ln=0, align="C", fill=True)
+            
+            # Header row - Time columns
             for col in df.columns:
-                pdf.cell(col_width, row_height, str(col), border=1, ln=0, align="C")
+                pdf.cell(col_width, row_height, str(col), border=1, ln=0, align="C", fill=True)
             pdf.ln(row_height)
             
-            pdf.set_font("Arial", "", 10)
+            # Data rows
+            pdf.set_font("Arial", "", 8)
+            pdf.set_fill_color(245, 245, 245)  # Light gray for alternating rows
             
-            for idx, row in df.iterrows():
-                pdf.cell(col_width, row_height, idx, border=1)
+            for idx, (day, row) in enumerate(df.iterrows()):
+                fill = idx % 2 == 0  # Alternate row coloring
+                
+                # Calculate row height based on content
+                max_lines = 1
                 for item in row:
-                    pdf.cell(col_width, row_height, str(item).replace("\n", " | "), border=1)
-                pdf.ln(row_height)
+                    if str(item) != "":
+                        lines = str(item).split("\n")
+                        max_lines = max(max_lines, len(lines))
+                
+                dynamic_row_height = max(row_height, max_lines * 6)  # 6mm per line
+                
+                # Day column
+                pdf.set_font("Arial", "B", 9)
+                pdf.cell(col_width, dynamic_row_height, str(day), border=1, ln=0, align="C", fill=fill)
+                
+                # Time slot columns
+                pdf.set_font("Arial", "", 7)
+                for item in row:
+                    content = str(item) if item != "" else ""
+                    
+                    if content != "":
+                        # Split multiple entries and format each on new line
+                        entries = content.split("\n") if "\n" in content else [content]
+                        formatted_entries = []
+                        
+                        for entry in entries:
+                            if len(entry.strip()) > 0:
+                                # Format each entry nicely
+                                if len(entry) > 35:  # Wrap long entries
+                                    words = entry.split()
+                                    lines = []
+                                    current_line = ""
+                                    for word in words:
+                                        if len(current_line + " " + word) <= 35:
+                                            current_line += " " + word if current_line else word
+                                        else:
+                                            if current_line:
+                                                lines.append(current_line)
+                                            current_line = word
+                                    if current_line:
+                                        lines.append(current_line)
+                                    formatted_entries.extend(lines)
+                                else:
+                                    formatted_entries.append(entry)
+                        
+                        # Join entries with newlines for vertical display
+                        final_content = "\n".join(formatted_entries)
+                    else:
+                        final_content = ""
+                    
+                    # Create multi-line cell
+                    x_pos = pdf.get_x()
+                    y_pos = pdf.get_y()
+                    
+                    # Draw cell border
+                    pdf.rect(x_pos, y_pos, col_width, dynamic_row_height)
+                    if fill:
+                        pdf.set_fill_color(245, 245, 245)
+                        pdf.rect(x_pos, y_pos, col_width, dynamic_row_height, 'F')
+                    
+                    # Add text line by line
+                    if final_content:
+                        lines = final_content.split("\n")
+                        line_height = 4
+                        start_y = y_pos + 2
+                        
+                        for i, line in enumerate(lines[:int(dynamic_row_height/line_height)-1]):  # Fit within cell
+                            pdf.set_xy(x_pos + 1, start_y + (i * line_height))
+                            pdf.cell(col_width - 2, line_height, line.strip(), ln=0, align="L")
+                    
+                    # Move to next column
+                    pdf.set_xy(x_pos + col_width, y_pos)
+                
+                pdf.ln(dynamic_row_height)
+            
+            # Footer
+            pdf.ln(10)
+            pdf.set_font("Arial", "I", 8)
+            pdf.cell(0, 10, f"Generated on: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}", ln=True, align="C")
             
             # Generate PDF as bytes
-            pdf_bytes = pdf.output(dest='S').encode('latin1')  # returns bytes
+            pdf_output = pdf.output(dest='S')
+            if isinstance(pdf_output, str):
+                pdf_bytes = pdf_output.encode('latin1')
+            else:
+                pdf_bytes = pdf_output
             return pdf_bytes
 
         pdf_bytes = create_pdf(grid_df)
         st.download_button("Download PDF", pdf_bytes, "timetable.pdf", "application/pdf")
-
-        # ------------- Download PNG ----------------
-        def create_png(df):
-            fig, ax = plt.subplots(figsize=(len(df.columns)*1.5, len(df.index)*0.8))
-            ax.axis('tight')
-            ax.axis('off')
-            table = ax.table(cellText=df.values, rowLabels=df.index, colLabels=df.columns,
-                            cellLoc='center', loc='center')
-            table.auto_set_font_size(False)
-            table.set_fontsize(10)
-            table.auto_set_column_width(col=list(range(len(df.columns))))
-            
-            png_output = BytesIO()
-            plt.savefig(png_output, format='png', bbox_inches='tight')
-            plt.close(fig)
-            png_output.seek(0)
-            return png_output
-
-        png_file = create_png(grid_df)
-        st.download_button("Download PNG", png_file, "timetable.png", "image/png")
-        
         
     if st.session_state.history:
                 
