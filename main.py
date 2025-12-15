@@ -13,7 +13,7 @@ from models.room import Room
 from models.time_slot import TimeSlot
 
 # Import algorithm
-from algorithm.cultural_algorithm import CulturalAlgorithm
+from algorithm.cultural_algorithm import CulturalAlgorithm, MultiTimetableCulturalAlgorithm
 
 # Import utilities
 from utils.validators import Validator
@@ -575,9 +575,17 @@ with tab5:
                     col2.metric("Hard Violations", hard_v)
                     col3.metric("Soft Violations", soft_v)
             
-            # Create and run algorithm
-            with st.spinner("Running Cultural Algorithm..."):
-                ca = CulturalAlgorithm(
+            # Create and run multi-timetable algorithm
+            with st.spinner("Running Cultural Algorithm for all Level-Group combinations..."):
+                def multi_progress_callback(message, completed, total):
+                    if completed < total:
+                        progress_bar.progress(completed / total)
+                        status_text.text(f"{message} ({completed + 1}/{total})")
+                    else:
+                        progress_bar.progress(1.0)
+                        status_text.text("Completed all timetables!")
+                
+                ca = MultiTimetableCulturalAlgorithm(
                     courses=st.session_state.courses,
                     lecturers=st.session_state.lecturers,
                     rooms=st.session_state.rooms,
@@ -588,355 +596,548 @@ with tab5:
                     mutation_rate=mutation_rate
                 )
                 
-                best_timetable, history = ca.run(callback=progress_callback)
+                all_timetables, all_histories = ca.run(callback=multi_progress_callback)
                 
-                st.session_state.results = best_timetable
-                st.session_state.history = history
+                st.session_state.results = all_timetables
+                st.session_state.history = all_histories
                 
                 # Store final results for persistent display
-                if history and len(history['best_fitness']) > 0:
-                    st.session_state.final_fitness = history['best_fitness'][-1]
-                    st.session_state.final_hard_violations = history['hard_violations'][-1]
-                    st.session_state.final_soft_violations = history['soft_violations'][-1]
+                if all_histories:
                     st.session_state.algorithm_completed = True
+                    # Store summary statistics from all timetables
+                    all_fitness = []
+                    all_hard_violations = []
+                    all_soft_violations = []
+                    
+                    for level_group_id, history in all_histories.items():
+                        if history and len(history['best_fitness']) > 0:
+                            all_fitness.append(history['best_fitness'][-1])
+                            all_hard_violations.append(history['hard_violations'][-1])
+                            all_soft_violations.append(history['soft_violations'][-1])
+                    
+                    # Store average results
+                    if all_fitness:
+                        st.session_state.final_fitness = sum(all_fitness) / len(all_fitness)
+                        st.session_state.final_hard_violations = sum(all_hard_violations)
+                        st.session_state.final_soft_violations = sum(all_soft_violations)
                 
                 # Results processed successfully
                 progress_bar.progress(1.0)
                 st.success("Algorithm completed successfully!")
     
-    # Performance Analysis
+    # Performance Analysis for Multiple Timetables
     if st.session_state.history:
         st.divider()
         st.subheader("Algorithm Performance Analysis")
         
-        # Create tabs for different analysis views
-        perf_tab1, perf_tab2, perf_tab3 = st.tabs([
-            "Evolution Curves",
-            "Parameter Analysis", 
-            "Belief Space Insights"
-        ])
-        
-        with perf_tab1:
-            col1, col2 = st.columns(2)
+        # Check if history is a dictionary (multiple timetables) or single history
+        if isinstance(st.session_state.history, dict):
+            # Multiple histories - show aggregated and individual results
+            perf_tab1, perf_tab2, perf_tab3 = st.tabs([
+                "Aggregated Performance",
+                "Individual Level-Group Performance", 
+                "Summary Statistics"
+            ])
             
-            with col1:
-                # Fitness evolution plot
-                fig, ax = plt.subplots(figsize=(10, 6))
-                generations_range = list(range(1, len(st.session_state.history['best_fitness']) + 1))
-                ax.plot(generations_range, st.session_state.history['best_fitness'], 
-                       label='Best Fitness', color='green', linewidth=2)
-                ax.plot(generations_range, st.session_state.history['avg_fitness'], 
-                       label='Average Fitness', color='blue', alpha=0.7)
-                ax.set_xlabel('Generation')
-                ax.set_ylabel('Fitness')
-                ax.set_title('Fitness Evolution Over Generations')
-                ax.legend()
-                ax.grid(True, alpha=0.3)
-                st.pyplot(fig)
-                plt.close(fig)
-            
-            with col2:
-                # Violations plot
-                fig, ax = plt.subplots(figsize=(10, 6))
-                ax.plot(generations_range, st.session_state.history['hard_violations'], 
-                       label='Hard Violations', color='red', linewidth=2)
-                ax.plot(generations_range, st.session_state.history['soft_violations'], 
-                       label='Soft Violations', color='orange', alpha=0.7)
-                ax.set_xlabel('Generation')
-                ax.set_ylabel('Number of Violations')
-                ax.set_title('Constraint Violations Over Generations')
-                ax.legend()
-                ax.grid(True, alpha=0.3)
-                st.pyplot(fig)
-                plt.close(fig)
-        
-        with perf_tab2:
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # Diversity plot
-                if 'diversity' in st.session_state.history:
-                    fig, ax = plt.subplots(figsize=(10, 6))
-                    ax.plot(generations_range, st.session_state.history['diversity'], 
-                           color='purple', linewidth=2)
-                    ax.set_xlabel('Generation')
-                    ax.set_ylabel('Population Diversity')
-                    ax.set_title('Population Diversity Over Generations')
-                    ax.grid(True, alpha=0.3)
-                    st.pyplot(fig)
-                    plt.close(fig)
-            
-            with col2:
-                # Parameter impact summary
-                st.subheader("Algorithm Parameters Used")
-                st.write(f"**Population Size:** {pop_size}")
-                st.write(f"**Max Generations:** {generations}")
-                st.write(f"**Acceptance Rate:** {acceptance_rate}")
-                st.write(f"**Mutation Rate:** {mutation_rate}")
-                
-                # Final statistics
-                final_fitness = st.session_state.history['best_fitness'][-1]
-                final_hard = st.session_state.history['hard_violations'][-1]
-                final_soft = st.session_state.history['soft_violations'][-1]
-                
-                st.subheader("Final Results")
-                st.metric("Best Fitness Achieved", f"{final_fitness:.5f}")
-                st.metric("Hard Violations", final_hard)
-                st.metric("Soft Violations", final_soft)
-                
-        with perf_tab3:
-            # Belief Space Analysis
-            if 'belief_space_updates' in st.session_state.history:
+            with perf_tab1:
+                # Aggregated fitness evolution
                 col1, col2 = st.columns(2)
                 
                 with col1:
                     fig, ax = plt.subplots(figsize=(10, 6))
-                    ax.plot(generations_range, st.session_state.history['belief_space_updates'], 
-                           color='brown', linewidth=2)
+                    
+                    # Calculate average fitness across all level-groups for each generation
+                    max_generations = 0
+                    all_histories = []
+                    
+                    for level_group_id, history in st.session_state.history.items():
+                        if history and 'best_fitness' in history:
+                            all_histories.append(history)
+                            max_generations = max(max_generations, len(history['best_fitness']))
+                    
+                    if all_histories:
+                        avg_best_fitness = []
+                        avg_avg_fitness = []
+                        
+                        for gen in range(max_generations):
+                            gen_best_fitness = []
+                            gen_avg_fitness = []
+                            
+                            for history in all_histories:
+                                if gen < len(history['best_fitness']):
+                                    gen_best_fitness.append(history['best_fitness'][gen])
+                                if gen < len(history['avg_fitness']):
+                                    gen_avg_fitness.append(history['avg_fitness'][gen])
+                            
+                            if gen_best_fitness:
+                                avg_best_fitness.append(sum(gen_best_fitness) / len(gen_best_fitness))
+                            if gen_avg_fitness:
+                                avg_avg_fitness.append(sum(gen_avg_fitness) / len(gen_avg_fitness))
+                        
+                        generations_range = list(range(1, len(avg_best_fitness) + 1))
+                        ax.plot(generations_range, avg_best_fitness, 
+                               label='Avg Best Fitness', color='green', linewidth=2)
+                        ax.plot(generations_range, avg_avg_fitness, 
+                               label='Avg Population Fitness', color='blue', alpha=0.7)
+                    
                     ax.set_xlabel('Generation')
-                    ax.set_ylabel('Belief Space Size')
-                    ax.set_title('Belief Space Knowledge Accumulation')
+                    ax.set_ylabel('Fitness')
+                    ax.set_title('Aggregated Fitness Evolution (All Level-Groups)')
+                    ax.legend()
                     ax.grid(True, alpha=0.3)
                     st.pyplot(fig)
                     plt.close(fig)
                 
                 with col2:
-                    st.subheader("Cultural Algorithm Analysis")
-                    improvement = (st.session_state.history['best_fitness'][-1] - 
-                                 st.session_state.history['best_fitness'][0])
-                    st.metric("Total Fitness Improvement", f"{improvement:.5f}")
+                    # Aggregated violations plot
+                    fig, ax = plt.subplots(figsize=(10, 6))
                     
-                    convergence_gen = None
-                    for i in range(1, len(st.session_state.history['best_fitness'])):
-                        if (st.session_state.history['best_fitness'][i] == 
-                            st.session_state.history['best_fitness'][i-1]):
-                            convergence_gen = i
-                            break
-                    
-                    if convergence_gen:
-                        st.metric("Convergence Generation", convergence_gen)
-                    else:
-                        st.metric("Convergence", "Still improving")
+                    if all_histories:
+                        avg_hard_violations = []
+                        avg_soft_violations = []
                         
-                    # Cultural Algorithm specific metrics
-                    avg_diversity = sum(st.session_state.history['diversity']) / len(st.session_state.history['diversity'])
-                    st.metric("Average Population Diversity", f"{avg_diversity:.4f}")
+                        for gen in range(max_generations):
+                            gen_hard_violations = []
+                            gen_soft_violations = []
+                            
+                            for history in all_histories:
+                                if gen < len(history.get('hard_violations', [])):
+                                    gen_hard_violations.append(history['hard_violations'][gen])
+                                if gen < len(history.get('soft_violations', [])):
+                                    gen_soft_violations.append(history['soft_violations'][gen])
+                            
+                            if gen_hard_violations:
+                                avg_hard_violations.append(sum(gen_hard_violations) / len(gen_hard_violations))
+                            if gen_soft_violations:
+                                avg_soft_violations.append(sum(gen_soft_violations) / len(gen_soft_violations))
+                        
+                        ax.plot(generations_range, avg_hard_violations, 
+                               label='Avg Hard Violations', color='red', linewidth=2)
+                        ax.plot(generations_range, avg_soft_violations, 
+                               label='Avg Soft Violations', color='orange', alpha=0.7)
                     
-                    # Improvement rate
-                    if len(st.session_state.history['best_fitness']) > 10:
-                        early_avg = sum(st.session_state.history['best_fitness'][:10]) / 10
-                        late_avg = sum(st.session_state.history['best_fitness'][-10:]) / 10
-                        improvement_rate = late_avg - early_avg
-                        st.metric("Late-Stage Improvement Rate", f"{improvement_rate:.5f}")
+                    ax.set_xlabel('Generation')
+                    ax.set_ylabel('Number of Violations')
+                    ax.set_title('Aggregated Constraint Violations (All Level-Groups)')
+                    ax.legend()
+                    ax.grid(True, alpha=0.3)
+                    st.pyplot(fig)
+                    plt.close(fig)
+            
+            with perf_tab2:
+                # Individual level-group performance
+                st.subheader("Individual Level-Group Performance")
+                
+                for level_group_id, history in st.session_state.history.items():
+                    with st.expander(f"Performance Details - {level_group_id}"):
+                        if history and 'best_fitness' in history:
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                # Individual fitness plot
+                                fig, ax = plt.subplots(figsize=(8, 4))
+                                generations_range = list(range(1, len(history['best_fitness']) + 1))
+                                ax.plot(generations_range, history['best_fitness'], 
+                                       label='Best Fitness', color='green', linewidth=2)
+                                ax.plot(generations_range, history['avg_fitness'], 
+                                       label='Average Fitness', color='blue', alpha=0.7)
+                                ax.set_xlabel('Generation')
+                                ax.set_ylabel('Fitness')
+                                ax.set_title(f'Fitness Evolution - {level_group_id}')
+                                ax.legend()
+                                ax.grid(True, alpha=0.3)
+                                st.pyplot(fig)
+                                plt.close(fig)
+                            
+                            with col2:
+                                # Individual metrics
+                                final_fitness = history['best_fitness'][-1]
+                                final_hard = history['hard_violations'][-1]
+                                final_soft = history['soft_violations'][-1]
+                                
+                                st.metric("Final Fitness", f"{final_fitness:.5f}")
+                                st.metric("Hard Violations", final_hard)
+                                st.metric("Soft Violations", final_soft)
+            
+            with perf_tab3:
+                # Summary statistics
+                st.subheader("Algorithm Parameters Used")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.write(f"**Population Size:** {pop_size}")
+                    st.write(f"**Max Generations:** {generations}")
+                    st.write(f"**Acceptance Rate:** {acceptance_rate}")
+                    st.write(f"**Mutation Rate:** {mutation_rate}")
+                
+                with col2:
+                    st.subheader("Overall Results")
+                    if hasattr(st.session_state, 'final_fitness'):
+                        st.metric("Average Fitness", f"{st.session_state.final_fitness:.5f}")
+                        st.metric("Total Hard Violations", st.session_state.final_hard_violations)
+                        st.metric("Total Soft Violations", st.session_state.final_soft_violations)
+        else:
+            # Single history (fallback to original behavior)
+            perf_tab1, perf_tab2, perf_tab3 = st.tabs([
+                "Evolution Curves",
+                "Parameter Analysis", 
+                "Belief Space Insights"
+            ])
+            
+            with perf_tab1:
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    # Fitness evolution plot
+                    fig, ax = plt.subplots(figsize=(10, 6))
+                    generations_range = list(range(1, len(st.session_state.history['best_fitness']) + 1))
+                    ax.plot(generations_range, st.session_state.history['best_fitness'], 
+                           label='Best Fitness', color='green', linewidth=2)
+                    ax.plot(generations_range, st.session_state.history['avg_fitness'], 
+                           label='Average Fitness', color='blue', alpha=0.7)
+                    ax.set_xlabel('Generation')
+                    ax.set_ylabel('Fitness')
+                    ax.set_title('Fitness Evolution Over Generations')
+                    ax.legend()
+                    ax.grid(True, alpha=0.3)
+                    st.pyplot(fig)
+                    plt.close(fig)
+                
+                with col2:
+                    # Violations plot
+                    fig, ax = plt.subplots(figsize=(10, 6))
+                    ax.plot(generations_range, st.session_state.history['hard_violations'], 
+                           label='Hard Violations', color='red', linewidth=2)
+                    ax.plot(generations_range, st.session_state.history['soft_violations'], 
+                           label='Soft Violations', color='orange', alpha=0.7)
+                    ax.set_xlabel('Generation')
+                    ax.set_ylabel('Number of Violations')
+                    ax.set_title('Constraint Violations Over Generations')
+                    ax.legend()
+                    ax.grid(True, alpha=0.3)
+                    st.pyplot(fig)
+                    plt.close(fig)
 
-    # Display results
+    # Display results for multiple timetables
     if st.session_state.results:
         st.divider()
-        st.subheader("Faculty Timetable Grid (Days as Rows)")
+        st.subheader("Generated Timetables by Level and Group")
 
-        timetable_data = st.session_state.results.to_dict_list()
-        df_timetable = pd.DataFrame(timetable_data)
-        # print(st.session_state.time_slots) 
-        # Days of the week
-        days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"]
-
-        # Get unique time slots and sort them
-        time_slots = sorted(df_timetable['hour'].unique(), key=lambda x: int(x.split(':')[0]))
-
-        # Create empty timetable DataFrame
-        grid_df = pd.DataFrame("", index=days, columns=time_slots)
-
-        # Fill the timetable
-        for _, row in df_timetable.iterrows():
-            day = row['day']
-            hour = row['hour']
-            entry = f"{row['course']} | {row['room']} | {row['lecturer']}"
-            if grid_df.at[day, hour] != "":
-                grid_df.at[day, hour] += "\n" + entry 
-            else:
-                grid_df.at[day, hour] = entry
-
-        # Display the timetable
-        st.dataframe(grid_df, use_container_width=True, height=400)
-        
-        # Debug info
-        with st.expander("Debug Information"):
-            st.write(f"Total timetable entries: {len(df_timetable)}")
-            st.write(f"Unique days: {df_timetable['day'].unique()}")
-            st.write(f"Unique hours: {sorted(df_timetable['hour'].unique())}")
-            st.write(f"Grid shape: {grid_df.shape}")
-            st.write("Sample entries:")
-            st.write(df_timetable.head())
-        
-        # ------------- Download CSV ----------------
-        csv_data = grid_df.to_csv(index=True)
-        st.download_button("Download CSV", csv_data, "timetable.csv", "text/csv")
-
-        # ------------- Download JSON ----------------
-        json_data = grid_df.to_dict(orient='index')
-        st.download_button("Download JSON", json.dumps(json_data, indent=2), "timetable.json", "application/json")
-
-        # ------------- Download PDF ----------------
-        def create_pdf(df):
-            from fpdf import FPDF
+        # Check if results is a dictionary (multiple timetables) or single timetable
+        if isinstance(st.session_state.results, dict):
+            # Multiple timetables - display each one in a tab
+            level_group_ids = sorted(st.session_state.results.keys())
             
-            # Use A3 landscape for better space
-            pdf = FPDF(orientation="L", unit="mm", format="A3")
-            pdf.add_page()
+            # Create summary metrics
+            st.subheader("Summary Statistics")
+            col1, col2, col3, col4 = st.columns(4)
             
-            # Title
-            pdf.set_font("Arial", "B", 16)
-            pdf.cell(0, 15, "Faculty Timetable Schedule", ln=True, align="C")
-            pdf.ln(5)
+            total_timetables = len(level_group_ids)
+            avg_fitness = st.session_state.final_fitness if hasattr(st.session_state, 'final_fitness') else 0
+            total_hard_violations = st.session_state.final_hard_violations if hasattr(st.session_state, 'final_hard_violations') else 0
+            total_soft_violations = st.session_state.final_soft_violations if hasattr(st.session_state, 'final_soft_violations') else 0
             
-            # Calculate dimensions
-            page_width = pdf.w - 20  # Leave margins
-            col_width = page_width / (len(df.columns) + 1)
-            row_height = 20  # Increased height for better readability
+            col1.metric("Total Timetables", total_timetables)
+            col2.metric("Average Fitness", f"{avg_fitness:.4f}")
+            col3.metric("Total Hard Violations", total_hard_violations)
+            col4.metric("Total Soft Violations", total_soft_violations)
             
-            # Header styling
-            pdf.set_font("Arial", "B", 10)
-            pdf.set_fill_color(200, 220, 255)  # Light blue background
+            # Create tabs for each timetable
+            tabs = st.tabs(level_group_ids)
             
-            # Header row - Day/Time column
-            pdf.cell(col_width, row_height, "Day/Time", border=1, ln=0, align="C", fill=True)
+            all_grids = {}
             
-            # Header row - Time columns
-            for col in df.columns:
-                pdf.cell(col_width, row_height, str(col), border=1, ln=0, align="C", fill=True)
-            pdf.ln(row_height)
-            
-            # Data rows
-            pdf.set_font("Arial", "", 8)
-            pdf.set_fill_color(245, 245, 245)  # Light gray for alternating rows
-            
-            for idx, (day, row) in enumerate(df.iterrows()):
-                fill = idx % 2 == 0  # Alternate row coloring
-                
-                # Calculate row height based on content
-                max_lines = 1
-                for item in row:
-                    if str(item) != "":
-                        lines = str(item).split("\n")
-                        max_lines = max(max_lines, len(lines))
-                
-                dynamic_row_height = max(row_height, max_lines * 6)  # 6mm per line
-                
-                # Day column
-                pdf.set_font("Arial", "B", 9)
-                pdf.cell(col_width, dynamic_row_height, str(day), border=1, ln=0, align="C", fill=fill)
-                
-                # Time slot columns
-                pdf.set_font("Arial", "", 7)
-                for item in row:
-                    content = str(item) if item != "" else ""
-                    
-                    if content != "":
-                        # Split multiple entries and format each on new line
-                        entries = content.split("\n") if "\n" in content else [content]
-                        formatted_entries = []
+            for i, level_group_id in enumerate(level_group_ids):
+                with tabs[i]:
+                    timetable = st.session_state.results[level_group_id]
+                    if timetable and hasattr(timetable, 'to_dict_list'):
+                        timetable_data = timetable.to_dict_list()
+                        df_timetable = pd.DataFrame(timetable_data)
                         
-                        for entry in entries:
-                            if len(entry.strip()) > 0:
-                                # Format each entry nicely
-                                if len(entry) > 35:  # Wrap long entries
-                                    words = entry.split()
-                                    lines = []
-                                    current_line = ""
-                                    for word in words:
-                                        if len(current_line + " " + word) <= 35:
-                                            current_line += " " + word if current_line else word
-                                        else:
-                                            if current_line:
-                                                lines.append(current_line)
-                                            current_line = word
-                                    if current_line:
-                                        lines.append(current_line)
-                                    formatted_entries.extend(lines)
+                        if not df_timetable.empty:
+                            # Days of the week
+                            days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"]
+
+                            # Get unique time slots and sort them
+                            time_slots = sorted(df_timetable['hour'].unique(), key=lambda x: int(x.split(':')[0]))
+
+                            # Create empty timetable DataFrame
+                            grid_df = pd.DataFrame("", index=days, columns=time_slots)
+
+                            # Fill the timetable
+                            for _, row in df_timetable.iterrows():
+                                day = row['day']
+                                hour = row['hour']
+                                entry = f"{row['course']} | {row['room']} | {row['lecturer']}"
+                                if grid_df.at[day, hour] != "":
+                                    grid_df.at[day, hour] += "\n" + entry 
                                 else:
-                                    formatted_entries.append(entry)
-                        
-                        # Join entries with newlines for vertical display
-                        final_content = "\n".join(formatted_entries)
+                                    grid_df.at[day, hour] = entry
+
+                            # Display the timetable
+                            st.dataframe(grid_df, use_container_width=True, height=400)
+                            
+                            # Store for PDF generation
+                            all_grids[level_group_id] = grid_df
+                            
+                            # Individual timetable metrics
+                            if level_group_id in st.session_state.history:
+                                history = st.session_state.history[level_group_id]
+                                if history and 'best_fitness' in history and len(history['best_fitness']) > 0:
+                                    col1, col2, col3 = st.columns(3)
+                                    col1.metric("Final Fitness", f"{history['best_fitness'][-1]:.4f}")
+                                    col2.metric("Hard Violations", history['hard_violations'][-1])
+                                    col3.metric("Soft Violations", history['soft_violations'][-1])
+                            
+                            # Debug info for this timetable
+                            with st.expander(f"Debug Information - {level_group_id}"):
+                                st.write(f"Total entries: {len(df_timetable)}")
+                                st.write(f"Unique days: {df_timetable['day'].unique()}")
+                                st.write(f"Unique hours: {sorted(df_timetable['hour'].unique())}")
+                                st.write(f"Grid shape: {grid_df.shape}")
+                                st.write("Sample entries:")
+                                st.write(df_timetable.head())
+                        else:
+                            st.warning(f"No data available for {level_group_id}")
                     else:
-                        final_content = ""
-                    
-                    # Create multi-line cell
-                    x_pos = pdf.get_x()
-                    y_pos = pdf.get_y()
-                    
-                    # Draw cell border
-                    pdf.rect(x_pos, y_pos, col_width, dynamic_row_height)
-                    if fill:
-                        pdf.set_fill_color(245, 245, 245)
-                        pdf.rect(x_pos, y_pos, col_width, dynamic_row_height, 'F')
-                    
-                    # Add text line by line
-                    if final_content:
-                        lines = final_content.split("\n")
-                        line_height = 4
-                        start_y = y_pos + 2
-                        
-                        for i, line in enumerate(lines[:int(dynamic_row_height/line_height)-1]):  # Fit within cell
-                            pdf.set_xy(x_pos + 1, start_y + (i * line_height))
-                            pdf.cell(col_width - 2, line_height, line.strip(), ln=0, align="L")
-                    
-                    # Move to next column
-                    pdf.set_xy(x_pos + col_width, y_pos)
-                
-                pdf.ln(dynamic_row_height)
+                        st.error(f"Invalid timetable data for {level_group_id}")
             
-            # Footer
-            pdf.ln(10)
-            pdf.set_font("Arial", "I", 8)
-            pdf.cell(0, 10, f"Generated on: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}", ln=True, align="C")
-            
-            # Generate PDF as bytes
-            pdf_output = pdf.output(dest='S')
-            if isinstance(pdf_output, str):
-                pdf_bytes = pdf_output.encode('latin1')
-            else:
-                pdf_bytes = pdf_output
-            return pdf_bytes
-
-        pdf_bytes = create_pdf(grid_df)
-        st.download_button("Download PDF", pdf_bytes, "timetable.pdf", "application/pdf")
+            # Store grids for download functions
+            st.session_state.all_grids = all_grids
         
-    if st.session_state.history:
+        else:
+            # Single timetable (fallback to original behavior)
+            timetable_data = st.session_state.results.to_dict_list()
+            df_timetable = pd.DataFrame(timetable_data)
+            
+            days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"]
+            time_slots = sorted(df_timetable['hour'].unique(), key=lambda x: int(x.split(':')[0]))
+            grid_df = pd.DataFrame("", index=days, columns=time_slots)
+
+            for _, row in df_timetable.iterrows():
+                day = row['day']
+                hour = row['hour']
+                entry = f"{row['course']} | {row['room']} | {row['lecturer']}"
+                if grid_df.at[day, hour] != "":
+                    grid_df.at[day, hour] += "\n" + entry 
+                else:
+                    grid_df.at[day, hour] = entry
+
+            st.dataframe(grid_df, use_container_width=True, height=400)
+            st.session_state.all_grids = {"Single Timetable": grid_df}
+        
+        # ------------- Download Options ----------------
+        st.subheader("Download Options")
+        download_col1, download_col2, download_col3 = st.columns(3)
+        
+        with download_col1:
+            # CSV Download for all timetables
+            if hasattr(st.session_state, 'all_grids') and st.session_state.all_grids:
+                all_csv_data = {}
+                for level_group_id, grid_df in st.session_state.all_grids.items():
+                    all_csv_data[level_group_id] = grid_df.to_csv(index=True)
                 
-        st.divider()
-        st.subheader("Algorithm Performance Visualization")
+                combined_csv = ""
+                for level_group_id, csv_data in all_csv_data.items():
+                    combined_csv += f"=== {level_group_id} ===\n"
+                    combined_csv += csv_data
+                    combined_csv += "\n\n"
+                
+                st.download_button("Download All CSV", combined_csv, "all_timetables.csv", "text/csv")
 
-        history = st.session_state.history
-        generations_range = range(1, len(history['best_fitness']) + 1)
+        with download_col2:
+            # JSON Download for all timetables
+            if hasattr(st.session_state, 'all_grids') and st.session_state.all_grids:
+                all_json_data = {}
+                for level_group_id, grid_df in st.session_state.all_grids.items():
+                    all_json_data[level_group_id] = grid_df.to_dict(orient='index')
+                
+                st.download_button("Download All JSON", 
+                                 json.dumps(all_json_data, indent=2), 
+                                 "all_timetables.json", "application/json")
 
-        # ------------------ FITNESS PLOT ------------------
-        st.markdown("### Fitness Convergence")
+        with download_col3:
+            # PDF Download for all timetables (8 pages)
+            if hasattr(st.session_state, 'all_grids') and st.session_state.all_grids:
+                def create_multi_page_pdf(all_grids):
+                    from fpdf import FPDF
+                    
+                    # Use A3 landscape for better space
+                    pdf = FPDF(orientation="L", unit="mm", format="A3")
+                    
+                    for i, (level_group_id, df) in enumerate(all_grids.items()):
+                        # Add a new page for each timetable
+                        pdf.add_page()
+                        
+                        # Title for this timetable
+                        pdf.set_font("Arial", "B", 16)
+                        pdf.cell(0, 15, f"Timetable Schedule - {level_group_id}", ln=True, align="C")
+                        pdf.ln(5)
+                        
+                        # Add level-group information
+                        pdf.set_font("Arial", "", 12)
+                        level = level_group_id[1]  # Extract level from L1G1 format
+                        group = level_group_id[3]  # Extract group from L1G1 format
+                        pdf.cell(0, 10, f"Level: {level} | Group: {group}", ln=True, align="C")
+                        pdf.ln(5)
+                        
+                        # Calculate dimensions
+                        page_width = pdf.w - 20  # Leave margins
+                        col_width = page_width / (len(df.columns) + 1)
+                        row_height = 20  # Increased height for better readability
+                        
+                        # Header styling
+                        pdf.set_font("Arial", "B", 10)
+                        pdf.set_fill_color(200, 220, 255)  # Light blue background
+                        
+                        # Header row - Day/Time column
+                        pdf.cell(col_width, row_height, "Day/Time", border=1, ln=0, align="C", fill=True)
+                        
+                        # Header row - Time columns
+                        for col in df.columns:
+                            pdf.cell(col_width, row_height, str(col), border=1, ln=0, align="C", fill=True)
+                        pdf.ln(row_height)
+                        
+                        # Data rows
+                        pdf.set_font("Arial", "", 8)
+                        pdf.set_fill_color(245, 245, 245)  # Light gray for alternating rows
+                        
+                        for idx, (day, row) in enumerate(df.iterrows()):
+                            fill = idx % 2 == 0  # Alternate row coloring
+                            
+                            # Calculate row height based on content
+                            max_lines = 1
+                            for item in row:
+                                if str(item) != "":
+                                    lines = str(item).split("\n")
+                                    max_lines = max(max_lines, len(lines))
+                            
+                            dynamic_row_height = max(row_height, max_lines * 6)  # 6mm per line
+                            
+                            # Day column
+                            pdf.set_font("Arial", "B", 9)
+                            pdf.cell(col_width, dynamic_row_height, str(day), border=1, ln=0, align="C", fill=fill)
+                            
+                            # Time slot columns
+                            pdf.set_font("Arial", "", 7)
+                            for item in row:
+                                content = str(item) if item != "" else ""
+                                
+                                if content != "":
+                                    # Split multiple entries and format each on new line
+                                    entries = content.split("\n") if "\n" in content else [content]
+                                    formatted_entries = []
+                                    
+                                    for entry in entries:
+                                        if len(entry.strip()) > 0:
+                                            # Format each entry nicely
+                                            if len(entry) > 35:  # Wrap long entries
+                                                words = entry.split()
+                                                lines = []
+                                                current_line = ""
+                                                for word in words:
+                                                    if len(current_line + " " + word) <= 35:
+                                                        current_line += " " + word if current_line else word
+                                                    else:
+                                                        if current_line:
+                                                            lines.append(current_line)
+                                                        current_line = word
+                                                if current_line:
+                                                    lines.append(current_line)
+                                                formatted_entries.extend(lines)
+                                            else:
+                                                formatted_entries.append(entry)
+                                    
+                                    # Join entries with newlines for vertical display
+                                    final_content = "\n".join(formatted_entries)
+                                else:
+                                    final_content = ""
+                                
+                                # Create multi-line cell
+                                x_pos = pdf.get_x()
+                                y_pos = pdf.get_y()
+                                
+                                # Draw cell border
+                                pdf.rect(x_pos, y_pos, col_width, dynamic_row_height)
+                                if fill:
+                                    pdf.set_fill_color(245, 245, 245)
+                                    pdf.rect(x_pos, y_pos, col_width, dynamic_row_height, 'F')
+                                
+                                # Add text line by line
+                                if final_content:
+                                    lines = final_content.split("\n")
+                                    line_height = 4
+                                    start_y = y_pos + 2
+                                    
+                                    for j, line in enumerate(lines[:int(dynamic_row_height/line_height)-1]):  # Fit within cell
+                                        pdf.set_xy(x_pos + 1, start_y + (j * line_height))
+                                        pdf.cell(col_width - 2, line_height, line.strip(), ln=0, align="L")
+                                
+                                # Move to next column
+                                pdf.set_xy(x_pos + col_width, y_pos)
+                            
+                            pdf.ln(dynamic_row_height)
+                        
+                        # Footer for this page
+                        pdf.ln(10)
+                        pdf.set_font("Arial", "I", 8)
+                        pdf.cell(0, 10, f"Generated on: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')} | Page {i+1} of {len(all_grids)}", ln=True, align="C")
+                    
+                    # Generate PDF as bytes
+                    pdf_output = pdf.output(dest='S')
+                    if isinstance(pdf_output, str):
+                        pdf_bytes = pdf_output.encode('latin1')
+                    else:
+                        pdf_bytes = pdf_output
+                    return pdf_bytes
 
-        fig1, ax1 = plt.subplots(figsize=(8, 4))
-        ax1.plot(generations_range, history['best_fitness'], label="Best Fitness")
-        ax1.plot(generations_range, history['avg_fitness'], label="Average Fitness")
-        ax1.set_xlabel("Generation")
-        ax1.set_ylabel("Fitness Value")
-        ax1.set_title("Fitness Convergence Over Generations")
-        ax1.legend()
-        ax1.grid(True)
+                pdf_bytes = create_multi_page_pdf(st.session_state.all_grids)
+                st.download_button("Download All PDF (8 Pages)", pdf_bytes, "all_timetables.pdf", "application/pdf")
+        
+        # Global Constraints Analysis
+        if isinstance(st.session_state.results, dict):
+            st.divider()
+            st.subheader("Global Constraints Analysis")
+            
+            # Import and use the global constraint checker
+            from algorithm.global_constraints import GlobalConstraintChecker
+            
+            global_checker = GlobalConstraintChecker()
+            
+            # Get constraint report
+            constraint_report = global_checker.get_constraint_report(st.session_state.results)
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric("Total Conflicts", constraint_report['total_conflicts'])
+            with col2:
+                st.metric("Lecturer Conflicts", len(constraint_report['lecturer_conflicts']))
+            with col3:
+                st.metric("Room Conflicts", len(constraint_report['room_conflicts']))
+            
+            # Show detailed conflicts if any exist
+            if constraint_report['total_conflicts'] > 0:
+                st.warning("⚠️ Global constraint violations detected!")
+                
+                if constraint_report['lecturer_conflicts']:
+                    with st.expander("👨‍🏫 Lecturer Conflicts"):
+                        for conflict in constraint_report['lecturer_conflicts']:
+                            st.write(f"**{conflict['resource']}** has conflicts at **{conflict['time']}**:")
+                            for assignment in conflict['conflicting_assignments']:
+                                st.write(f"  - {assignment['level_group']}: {assignment['course']} in {assignment['room']}")
+                            st.write("---")
+                
+                if constraint_report['room_conflicts']:
+                    with st.expander("🏢 Room Conflicts"):
+                        for conflict in constraint_report['room_conflicts']:
+                            st.write(f"**{conflict['resource']}** has conflicts at **{conflict['time']}**:")
+                            for assignment in conflict['conflicting_assignments']:
+                                st.write(f"  - {assignment['level_group']}: {assignment['course']} by {assignment['lecturer']}")
+                            st.write("---")
+            else:
+                st.success("✅ No global constraint violations found! All shared resources (lecturers and rooms) are properly scheduled.")
 
-        st.pyplot(fig1)
-
-        # ------------------ VIOLATIONS PLOT ------------------
-        st.markdown("### Constraint Violations")
-
-        fig2, ax2 = plt.subplots(figsize=(8, 4))
-        ax2.plot(generations_range, history['hard_violations'], label="Hard Violations")
-        ax2.plot(generations_range, history['soft_violations'], label="Soft Violations")
-        ax2.set_xlabel("Generation")
-        ax2.set_ylabel("Number of Violations")
-        ax2.set_title("Constraint Violations Over Generations")
-        ax2.legend()
-        ax2.grid(True)
-
-        st.pyplot(fig2)
 
 
 

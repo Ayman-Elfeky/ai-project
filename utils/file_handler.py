@@ -14,7 +14,9 @@ class FileHandler:
                 name=row['name'],
                 department=row['department'],
                 weekly_hours=int(row['weekly_hours']),
-                course_type=row.get('type', 'lecture')
+                course_type=row.get('type', 'lecture'),
+                level=int(row.get('level', 1)),
+                group=int(row.get('group', 1))
             )
             courses.append(course)
         return courses

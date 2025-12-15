@@ -14,9 +14,13 @@ class Settings:
     START_HOUR = 8
     END_HOUR = 18
     
+    # Level and Group Configuration
+    LEVELS = [1, 2, 3, 4]
+    GROUPS_PER_LEVEL = [1, 2]  # Groups 1 and 2 for each level
+    
     # K-Fold Validation / Testing
     DEFAULT_K_FOLDS = 5
-    
+
     # File Upload
     ALLOWED_FILE_TYPES = ['csv', 'xlsx', 'json', 'pdf']
     MAX_FILE_SIZE_MB = 10

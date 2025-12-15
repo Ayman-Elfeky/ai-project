@@ -30,8 +30,8 @@ class FitnessEvaluator:
             
             lecturer_schedule[time_key].append(entry.lecturer)
             room_schedule[time_key].append(entry.room)
-            # Use department as group if group not set, combine with course type
-            group_key = f"{entry.course.group}_{entry.course.course_type}"
+            # Use level-group ID for scheduling conflicts
+            group_key = f"{entry.course.get_level_group_id()}_{entry.course.course_type}"
             group_schedule[time_key].append(group_key)
             
             # Room type compatibility

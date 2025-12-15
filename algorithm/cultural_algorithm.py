@@ -1,4 +1,120 @@
 import random
+from collections import defaultdict
+from algorithm.global_constraints import GlobalConstraintChecker
+
+class MultiTimetableCulturalAlgorithm:
+    """Cultural Algorithm for generating multiple timetables based on level-group combinations."""
+    
+    def __init__(self, courses, lecturers, rooms, time_slots, 
+                 population_size=50, generations=100, 
+                 acceptance_rate=0.3, mutation_rate=0.1):
+        
+        self.courses = courses
+        self.lecturers = lecturers
+        self.rooms = rooms
+        self.time_slots = time_slots
+        
+        self.population_size = population_size
+        self.generations = generations
+        self.acceptance_rate = acceptance_rate
+        self.mutation_rate = mutation_rate
+        
+        # Group courses by level and group
+        self.level_group_courses = self._group_courses_by_level_group()
+        
+        # Initialize global constraint checker
+        self.global_checker = GlobalConstraintChecker()
+        
+        self.results = {}
+        self.history = {}
+        
+    def _group_courses_by_level_group(self):
+        """Group courses by their level and group combination."""
+        grouped = defaultdict(list)
+        
+        for course in self.courses:
+            level_group_id = course.get_level_group_id()
+            grouped[level_group_id].append(course)
+            
+        return dict(grouped)
+    
+    def run(self, callback=None):
+        """Execute the Cultural Algorithm for all level-group combinations with global constraint optimization."""
+        all_results = {}
+        all_histories = {}
+        
+        total_combinations = len(self.level_group_courses)
+        
+        # Step 1: Generate initial timetables for each level-group independently
+        if callback:
+            callback("Phase 1: Generating initial timetables...", 0, total_combinations)
+        
+        for i, (level_group_id, courses) in enumerate(self.level_group_courses.items()):
+            if callback:
+                callback(f"Processing {level_group_id}...", i, total_combinations)
+            
+            # Create individual Cultural Algorithm for this level-group
+            ca = CulturalAlgorithm(
+                courses=courses,
+                lecturers=self.lecturers,
+                rooms=self.rooms,
+                time_slots=self.time_slots,
+                population_size=self.population_size,
+                generations=self.generations,
+                acceptance_rate=self.acceptance_rate,
+                mutation_rate=self.mutation_rate
+            )
+            
+            # Run algorithm for this specific level-group
+            best_timetable, history = ca.run()
+            
+            all_results[level_group_id] = best_timetable
+            all_histories[level_group_id] = history
+        
+        # Step 2: Apply global constraint optimization
+        if callback:
+            callback("Phase 2: Optimizing global constraints...", total_combinations, total_combinations)
+        
+        # Perform iterative improvement to resolve global conflicts
+        max_global_iterations = 5
+        for iteration in range(max_global_iterations):
+            # Check global constraints
+            global_violations = self.global_checker.evaluate_global_constraints(all_results)
+            
+            # If no global violations, we're done
+            if all(violations == 0 for violations in global_violations.values()):
+                break
+            
+            # Find the most problematic timetable and regenerate it
+            worst_level_group = max(global_violations.keys(), key=lambda x: global_violations[x])
+            
+            if global_violations[worst_level_group] > 0:
+                # Regenerate the most problematic timetable with modified parameters
+                courses = self.level_group_courses[worst_level_group]
+                
+                ca = CulturalAlgorithm(
+                    courses=courses,
+                    lecturers=self.lecturers,
+                    rooms=self.rooms,
+                    time_slots=self.time_slots,
+                    population_size=self.population_size // 2,  # Smaller population for faster execution
+                    generations=self.generations // 2,          # Fewer generations
+                    acceptance_rate=self.acceptance_rate,
+                    mutation_rate=self.mutation_rate * 1.5      # Higher mutation for more diversity
+                )
+                
+                # Re-run for the problematic level-group
+                best_timetable, history = ca.run()
+                all_results[worst_level_group] = best_timetable
+                
+                # Update history with additional iteration info
+                if worst_level_group in all_histories:
+                    all_histories[worst_level_group]['global_optimization_iterations'] = iteration + 1
+        
+        self.results = all_results
+        self.history = all_histories
+        
+        return all_results, all_histories
 
 class CulturalAlgorithm:
     """Cultural Algorithm for timetable scheduling."""
