@@ -32,11 +32,16 @@ class Timetable:
     def initialize_random(self):
         self.entries = []
         for course in self.courses:
+            # Filter compatible rooms for this course type
+            compatible_rooms = [r for r in self.rooms if r.room_type == course.course_type]
+            if not compatible_rooms:
+                compatible_rooms = self.rooms
+                
             for _ in range(course.weekly_hours):
                 entry = TimetableEntry(
                     course=course,
                     lecturer=random.choice(self.lecturers),
-                    room=random.choice(self.rooms),
+                    room=random.choice(compatible_rooms),
                     time_slot=random.choice(self.time_slots)
                 )
                 self.entries.append(entry)

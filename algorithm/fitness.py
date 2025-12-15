@@ -30,7 +30,9 @@ class FitnessEvaluator:
             
             lecturer_schedule[time_key].append(entry.lecturer)
             room_schedule[time_key].append(entry.room)
-            group_schedule[time_key].append(entry.course.group)
+            # Use department as group if group not set, combine with course type
+            group_key = f"{entry.course.group}_{entry.course.course_type}"
+            group_schedule[time_key].append(group_key)
             
             # Room type compatibility
             if entry.course.course_type != entry.room.room_type:
@@ -62,13 +64,25 @@ class FitnessEvaluator:
             if len(groups) != len(set(groups)):
                 violations += len(groups) - len(set(groups))
         
+        # Group courses by name and type to handle duplicates
         course_hours = defaultdict(int)
         for entry in timetable.entries:
-            course_hours[entry.course.name] += 1
+            course_key = f"{entry.course.name}_{entry.course.course_type}"
+            course_hours[course_key] += 1
         
+        # Check each unique course requirement
+        unique_courses = {}
         for course in timetable.courses:
-            if course_hours[course.name] != course.weekly_hours:
-                violations += abs(course_hours[course.name] - course.weekly_hours)
+            course_key = f"{course.name}_{course.course_type}"
+            if course_key not in unique_courses:
+                unique_courses[course_key] = course.weekly_hours
+            else:
+                unique_courses[course_key] += course.weekly_hours
+        
+        for course_key, required_hours in unique_courses.items():
+            actual_hours = course_hours.get(course_key, 0)
+            if actual_hours != required_hours:
+                violations += abs(actual_hours - required_hours)
         
         return violations
     

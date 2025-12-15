@@ -42,6 +42,14 @@ if 'results' not in st.session_state:
     st.session_state.results = None
 if 'history' not in st.session_state:
     st.session_state.history = None
+if 'final_fitness' not in st.session_state:
+    st.session_state.final_fitness = None
+if 'final_hard_violations' not in st.session_state:
+    st.session_state.final_hard_violations = None
+if 'final_soft_violations' not in st.session_state:
+    st.session_state.final_soft_violations = None
+if 'algorithm_completed' not in st.session_state:
+    st.session_state.algorithm_completed = False
 if "courses_uploaded" not in st.session_state:
     st.session_state.courses_uploaded = False
 if "lecturers_uploaded" not in st.session_state:
@@ -151,15 +159,56 @@ with st.sidebar:
     
     st.divider()
     
+# Algorithm Results Summary
+    if st.session_state.algorithm_completed and st.session_state.final_fitness is not None:
+        st.divider()
+        st.subheader("Last Algorithm Results")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric(
+                "Best Fitness", 
+                f"{st.session_state.final_fitness:.5f}",
+                help="Higher is better (max: 1.0)"
+            )
+        with col2:
+            st.metric(
+                "Hard Violations", 
+                st.session_state.final_hard_violations,
+                delta=-st.session_state.final_hard_violations if st.session_state.final_hard_violations > 0 else None,
+                help="Critical constraints violated"
+            )
+        with col3:
+            st.metric(
+                "Soft Violations", 
+                st.session_state.final_soft_violations,
+                delta=-st.session_state.final_soft_violations if st.session_state.final_soft_violations > 0 else None,
+                help="Preference constraints violated"
+            )
+        
+        # Solution quality indicator
+        if st.session_state.final_hard_violations == 0:
+            st.success("Feasible Solution Found - No Hard Constraint Violations")
+        elif st.session_state.final_hard_violations <= 5:
+            st.warning(f"Nearly Feasible - {st.session_state.final_hard_violations} Hard Violations")
+        else:
+            st.error(f"Infeasible Solution - {st.session_state.final_hard_violations} Hard Violations")
+    
+    st.divider()
+    
     # Quick Actions
     st.subheader("Quick Actions")
     if st.button("Clear All Data", use_container_width=True):
         st.session_state.courses = []
-        st.session_state.lecturers = [] 
+        st.session_state.lecturers = []
         st.session_state.rooms = []
         st.session_state.time_slots = []
         st.session_state.results = None
         st.session_state.history = None
+        st.session_state.final_fitness = None
+        st.session_state.final_hard_violations = None
+        st.session_state.final_soft_violations = None
+        st.session_state.algorithm_completed = False
         st.rerun()
 
 # MAIN CONTENT TABS
@@ -504,6 +553,12 @@ with tab5:
             )
         
         if run_button:
+            # Clear previous results
+            st.session_state.final_fitness = None
+            st.session_state.final_hard_violations = None
+            st.session_state.final_soft_violations = None
+            st.session_state.algorithm_completed = False
+            
             # Progress tracking
             progress_bar = st.progress(0)
             status_text = st.empty()
@@ -537,6 +592,14 @@ with tab5:
                 
                 st.session_state.results = best_timetable
                 st.session_state.history = history
+                
+                # Store final results for persistent display
+                if history and len(history['best_fitness']) > 0:
+                    st.session_state.final_fitness = history['best_fitness'][-1]
+                    st.session_state.final_hard_violations = history['hard_violations'][-1]
+                    st.session_state.final_soft_violations = history['soft_violations'][-1]
+                    st.session_state.algorithm_completed = True
+                
                 # Results processed successfully
                 progress_bar.progress(1.0)
                 st.success("Algorithm completed successfully!")

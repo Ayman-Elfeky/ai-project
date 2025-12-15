@@ -81,7 +81,13 @@ class CulturalAlgorithm:
             new_population.extend([e.copy() for e in elites])
             
             while len(new_population) < self.population_size:
-                parent = random.choice(accepted)
+                # Tournament selection from accepted individuals
+                if len(accepted) > 1:
+                    tournament_size = min(3, len(accepted))
+                    tournament = random.sample(accepted, tournament_size)
+                    parent = max(tournament, key=lambda x: x.fitness)
+                else:
+                    parent = random.choice(accepted)
                 
                 offspring = self.population_manager.mutate(
                     parent, self.mutation_rate, self.belief_space
