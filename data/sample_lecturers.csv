@@ -1,7 +1,14 @@
-name,email
-Dr. John Smith,john.smith@university.edu
-Dr. Sarah Johnson,sarah.johnson@university.edu
-Prof. Michael Chen,michael.chen@university.edu
-Dr. Emily Davis,emily.davis@university.edu
-Dr. Robert Brown,robert.brown@university.edu
-Dr. Christopher Lee,christopher.lee@university.edu
+name,email,qualified_courses,availability
+Dr. John Smith,john.smith@university.edu,"Data Structures;Algorithms;Advanced Algorithms;System Analysis","Monday:08:00-12:00;Tuesday:09:00-15:00;Wednesday:10:00-16:00;Sunday:09:00-13:00"
+Dr. Sarah Johnson,sarah.johnson@university.edu,"Database Management;Database Lab;Software Engineering;System Analysis","Monday:10:00-16:00;Tuesday:08:00-14:00;Thursday:09:00-15:00;Sunday:08:00-12:00"
+Prof. Michael Chen,michael.chen@university.edu,"Operating Systems;Computer Networks;Cyber Security;System Analysis","Tuesday:10:00-16:00;Wednesday:08:00-14:00;Thursday:10:00-16:00"
+Dr. Emily Davis,emily.davis@university.edu,"PL-2;Software Engineering;Project Management;Advanced Algorithms","Monday:14:00-18:00;Tuesday:08:00-12:00;Wednesday:09:00-15:00;Thursday:08:00-14:00"
+Dr. Robert Brown,robert.brown@university.edu,"Artificial Intelligence;Machine Learning;Cyber Security;Advanced Algorithms","Sunday:08:00-12:00;Monday:09:00-15:00;Wednesday:10:00-16:00;Thursday:09:00-15:00"
+Dr. Christopher Lee,christopher.lee@university.edu,"Web Development;Computer Graphics;Mobile App Development;Project Management","Sunday:10:00-16:00;Monday:08:00-14:00;Tuesday:10:00-16:00;Friday:09:00-15:00"
+Dr. Maria Rodriguez,maria.rodriguez@university.edu,"Data Structures;Algorithms;Database Management;Operating Systems","Sunday:14:00-18:00;Monday:10:00-16:00;Tuesday:08:00-14:00;Wednesday:08:00-12:00"
+Prof. David Wilson,david.wilson@university.edu,"Artificial Intelligence;Machine Learning;Computer Graphics;Cyber Security","Monday:08:00-14:00;Wednesday:10:00-18:00;Thursday:12:00-18:00;Friday:08:00-14:00"
+Dr. Lisa Thompson,lisa.thompson@university.edu,"Web Development;Mobile App Development;Computer Graphics;Software Engineering","Sunday:09:00-15:00;Tuesday:12:00-18:00;Wednesday:08:00-14:00;Thursday:08:00-14:00"
+Dr. James Anderson,james.anderson@university.edu,"Computer Networks;Operating Systems;PL-2;System Analysis","Monday:12:00-18:00;Tuesday:08:00-16:00;Thursday:10:00-16:00;Friday:10:00-16:00"
+Prof. Rachel Green,rachel.green@university.edu,"Database Management;Database Lab;PL-2;Software Engineering","Sunday:08:00-14:00;Monday:09:00-17:00;Wednesday:12:00-18:00;Friday:08:00-14:00"
+Dr. Kevin Martinez,kevin.martinez@university.edu,"Mobile App Development;Computer Graphics;Web Development;Project Management","Sunday:12:00-18:00;Tuesday:09:00-17:00;Wednesday:14:00-18:00;Thursday:08:00-16:00"
+Dr. Amanda White,amanda.white@university.edu,"Machine Learning;Artificial Intelligence;Cyber Security;Data Structures","Monday:08:00-16:00;Tuesday:14:00-18:00;Thursday:09:00-17:00;Friday:12:00-18:00"

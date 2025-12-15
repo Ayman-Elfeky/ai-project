@@ -80,7 +80,7 @@ class PopulationManager:
         min_length = min(len(parent1.entries), len(parent2.entries))
         
         for i in range(min_length):
-            if random.random() < 0.5:  # 50% chance to take from parent2
+            if random.random() < 0.5: 
                 child.entries[i] = TimetableEntry(
                     parent2.entries[i].course,
                     parent2.entries[i].lecturer, 

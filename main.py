@@ -583,7 +583,7 @@ with tab5:
                         status_text.text(f"{message} ({completed + 1}/{total})")
                     else:
                         progress_bar.progress(1.0)
-                        status_text.text("Completed all timetables!")
+                        status_text.text(message)
                 
                 ca = MultiTimetableCulturalAlgorithm(
                     courses=st.session_state.courses,
@@ -1137,6 +1137,18 @@ with tab5:
                             st.write("---")
             else:
                 st.success("✅ No global constraint violations found! All shared resources (lecturers and rooms) are properly scheduled.")
+                
+                # Show optimization summary if available
+                optimization_summary = []
+                for level_group_id, history in st.session_state.history.items():
+                    if isinstance(history, dict) and 'global_optimization_iterations' in history:
+                        optimization_summary.append(f"{level_group_id}: {history['global_optimization_iterations']} iterations")
+                
+                if optimization_summary:
+                    with st.expander("🔧 Global Optimization Details"):
+                        st.write("The following timetables required additional optimization to resolve conflicts:")
+                        for summary in optimization_summary:
+                            st.write(f"• {summary}")
 
 
 

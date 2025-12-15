@@ -1,7 +1,7 @@
-name,capacity,type
-Hall-1,100,lecture
-Hall-2,80,lecture
-Hall-3,90,lecture
-Hall-4,75,lecture
-Lab-1,30,lab
-Lab-2,30,lab
+name,capacity,type,availability
+Hall-1,100,lecture,"Sunday:08:00-17:00;Monday:08:00-17:00;Tuesday:08:00-17:00;Wednesday:08:00-17:00;Thursday:08:00-17:00"
+Hall-2,80,lecture,"Sunday:08:00-17:00;Monday:08:00-17:00;Tuesday:08:00-17:00;Wednesday:08:00-17:00;Thursday:08:00-17:00"
+Hall-3,90,lecture,"Sunday:08:00-17:00;Monday:08:00-17:00;Tuesday:08:00-17:00;Wednesday:08:00-17:00;Thursday:08:00-17:00"
+Hall-4,75,lecture,"Sunday:08:00-17:00;Monday:08:00-17:00;Tuesday:08:00-17:00;Wednesday:08:00-17:00;Thursday:08:00-17:00"
+Lab-1,30,lab,"Sunday:08:00-17:00;Monday:08:00-17:00;Tuesday:08:00-17:00;Wednesday:08:00-17:00;Thursday:08:00-17:00"
+Lab-2,30,lab,"Sunday:08:00-17:00;Monday:08:00-17:00;Tuesday:08:00-17:00;Wednesday:08:00-17:00;Thursday:08:00-17:00"

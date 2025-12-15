@@ -37,6 +37,7 @@ class Timetable:
             if not compatible_rooms:
                 compatible_rooms = self.rooms
                 
+            # [TimetableEntry, TimetableEntry, ...]
             for _ in range(course.weekly_hours):
                 entry = TimetableEntry(
                     course=course,

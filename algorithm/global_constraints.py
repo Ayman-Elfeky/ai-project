@@ -52,8 +52,8 @@ class GlobalConstraintChecker:
             # Check for conflicts (same lecturer at same time in different level-groups)
             for lecturer_name, lecturer_entries in lecturer_conflicts.items():
                 if len(lecturer_entries) > 1:
-                    # Lecturer conflict detected
-                    conflict_penalty = len(lecturer_entries) - 1
+                    # Lecturer conflict detected - Heavy penalty
+                    conflict_penalty = (len(lecturer_entries) - 1) * 5  # Increased penalty
                     
                     # Distribute penalty among conflicting timetables
                     for entry_info in lecturer_entries:
@@ -72,8 +72,8 @@ class GlobalConstraintChecker:
             # Check for conflicts (same room at same time in different level-groups)
             for room_name, room_entries in room_conflicts.items():
                 if len(room_entries) > 1:
-                    # Room conflict detected
-                    conflict_penalty = len(room_entries) - 1
+                    # Room conflict detected - Heavy penalty
+                    conflict_penalty = (len(room_entries) - 1) * 5  # Increased penalty
                     
                     # Distribute penalty among conflicting timetables
                     for entry_info in room_entries:
